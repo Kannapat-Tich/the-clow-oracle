@@ -1,0 +1,10 @@
+{
+  "name": "the-clow-oracle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "THE CLOW — คัมภีร์พยากรณ์ไพ่โคลว์การ์ด 52 ใบ พร้อม AI ตีความ (Cloudflare Pages)",
+  "scripts": {
+    "dev": "npx wrangler pages dev public"
+  }
+}

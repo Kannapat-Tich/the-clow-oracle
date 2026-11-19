@@ -1,0 +1,246 @@
+/**
+ * THE CLOW — Cloudflare Pages Function (/api/interpret)
+ * ฟรี 100,000 requests/วัน บน Cloudflare Pages
+ *
+ * คุณสมบัติ:
+ * 1. อ้างอิงความหมายไพ่จากคัมภีร์ต้นฉบับฝั่งเซิร์ฟเวอร์ (public/data/cards.js & spreads.js)
+ * 2. เรียก Google Gemini Free Tier (gemini-2.5-flash -> fallback gemini-2.5-flash-lite)
+ *    และสลับไป Groq Free Tier อัตโนมัติหากตั้งค่า GROQ_API_KEY สำรองไว้
+ * 3. มี Rate Limit ต่อ IP แบบเบาๆ (5 ครั้ง / 10 นาที) เพื่อกันสแปมและถนอมโควต้าฟรีตอนคนเข้าเยอะ
+ * 4. ไม่บันทึกคำถามหรือข้อมูลส่วนตัวลงฐานข้อมูลใดๆ
+ */
+
+import { CARDS_DATA } from '../../public/data/cards.js';
+import { SPREADS_DATA } from '../../public/data/spreads.js';
+
+const CARD_BY_ID = new Map(CARDS_DATA.map((c) => [c.id, c]));
+const SPREAD_BY_ID = new Map(SPREADS_DATA.map((s) => [s.spread_id, s]));
+
+// In-memory edge rate limit ต่อ isolate (ช่วยลดสแปมฟรีโดยไม่ต้องเสียค่า KV)
+const ipHits = new Map();
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQ = 6;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const record = ipHits.get(ip);
+  if (!record || now - record.windowStart > RATE_LIMIT_WINDOW_MS) {
+    ipHits.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+  record.count += 1;
+  return record.count > RATE_LIMIT_MAX_REQ;
+}
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    }
+  });
+}
+
+function buildOraclePrompt({ spread, question, resolvedCards }) {
+  const cardsText = resolvedCards
+    .map(
+      ({ pos, card }) =>
+        `ตำแหน่งที่ ${pos.index}: ${pos.title} (${pos.meaning})\n` +
+        `- ไพ่ที่ได้: ${card.name} (${card.thaiName}) [${card.elementThai}]\n` +
+        `- คีย์เวิร์ด: ${card.keywords.join(', ')}\n` +
+        `- ความหมายตามคู่มือ: ${card.meaning}\n` +
+        `- ข้อควรระวังตามคู่มือ: ${card.warning}`
+    )
+    .join('\n\n');
+
+  const userQuestionBlock = question
+    ? `ปัญหา/คำถามที่ผู้ใช้เล่ามา:\n"""${question}"""`
+    : 'ผู้ใช้ไม่ได้ระบุคำถามเป็นข้อความ (อธิษฐานในใจ) ให้ตีความเชื่อมโยงภาพรวมของหน้าไพ่ให้สอดคล้องกันอย่างลึกซึ้ง';
+
+  return (
+    `คุณคือ "ผู้ดูแลคัมภีร์พยากรณ์ไพ่โคลว์การ์ด (THE CLOW)" ที่อบอุ่น สุขุม อ่อนโยน และซื่อสัตย์ต่อคู่มือไพ่โคลว์การ์ดต้นฉบับ\n` +
+    `กติกาสำคัญ:\n` +
+    `1. ยึดความหมายหลักและข้อควรระวังจากคู่มือที่ให้ไว้ด้านล่างเป็นแกนหลัก ห้ามแต่งความหมายไพ่ขัดแย้งกับคู่มือ\n` +
+    `2. ร้อยเรียงหน้าไพ่ทุกใบให้ตอบโจทย์และเชื่อมโยงกับ "ปัญหา/คำถามของผู้ใช้" โดยตรง ให้คำแนะนำที่นำไปใช้ในชีวิตจริงได้จริง อ่านง่าย ไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
+    `3. ใช้ภาษาไทยสละสลวย อบอุ่น มีกลิ่นอายคัมภีร์เวทโบราณแบบ Cardcaptor Sakura แต่เข้าใจง่ายร่วมสมัย\n` +
+    `4. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
+    `{\n` +
+    `  "overview": "สรุปคำตอบภาพรวม 3-5 ประโยคที่เชื่อมโยงไพ่ทั้งหมดเข้ากับปัญหาของผู้ใช้โดยตรง",\n` +
+    `  "connections": [\n` +
+    `    {\n` +
+    `      "positionIndex": 1,\n` +
+    `      "positionTitle": "ชื่อตำแหน่ง",\n` +
+    `      "cardName": "ชื่อไพ่ (ชื่อไทย)",\n` +
+    `      "insight": "อธิบายว่าไพ่ใบนี้ในตำแหน่งนี้สื่อถึงอะไรกับปัญหาของผู้ใช้ (2-3 ประโยค)"\n` +
+    `    }\n` +
+    `  ],\n` +
+    `  "advice": ["คำแนะนำหรือข้อควรระวังที่ทำตามได้จริงข้อที่ 1", "ข้อที่ 2", "ข้อที่ 3"],\n` +
+    `  "closing": "ข้อความให้กำลังใจสั้นๆ 1 ประโยคสไตล์คัมภีร์โคลว์"\n` +
+    `}\n\n` +
+    `ผังการเปิดไพ่: ${spread.name} (${spread.engTitle})\n` +
+    `${userQuestionBlock}\n\n` +
+    `ข้อมูลไพ่จากคู่มือต้นฉบับ:\n${cardsText}`
+  );
+}
+
+function safeParseJson(rawText) {
+  if (!rawText) return null;
+  const cleaned = rawText
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```$/i, '')
+    .trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed && typeof parsed.overview === 'string') return parsed;
+  } catch (_) {}
+  return null;
+}
+
+async function callGemini(apiKey, model, prompt) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.75,
+        maxOutputTokens: 1600,
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (res.status === 429) {
+    return { quotaExceeded: true };
+  }
+  if (!res.ok) {
+    return { error: `Gemini HTTP ${res.status}` };
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const reading = safeParseJson(text);
+  if (!reading) return { error: 'Invalid JSON from Gemini' };
+  return { reading, provider: `Gemini (${model})` };
+}
+
+async function callGroq(apiKey, prompt) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (res.status === 429) return { quotaExceeded: true };
+  if (!res.ok) return { error: `Groq HTTP ${res.status}` };
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || '';
+  const reading = safeParseJson(text);
+  if (!reading) return { error: 'Invalid JSON from Groq' };
+  return { reading, provider: 'Groq (Llama 3.3 70B)' };
+}
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (isRateLimited(clientIp)) {
+    return jsonResponse(
+      {
+        code: 'RATE_LIMITED',
+        message:
+          'คุณใช้สิทธิ์ตีความด้วย AI ครบตามโควต้าช่วงเวลานี้แล้ว โปรดรอสักครู่ (ประมาณ 10 นาที) หรืออ่านคำทำนายจากตำราต้นฉบับด้านล่างได้ทันทีครับ'
+      },
+      429
+    );
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return jsonResponse({ code: 'BAD_REQUEST', message: 'รูปแบบคำขอไม่ถูกต้อง' }, 400);
+  }
+
+  const spread = SPREAD_BY_ID.get(body?.spreadId);
+  if (!spread) {
+    return jsonResponse({ code: 'INVALID_SPREAD', message: 'ไม่พบผังไพ่ที่ระบุ' }, 400);
+  }
+
+  const rawCards = Array.isArray(body?.cards) ? body.cards : [];
+  if (rawCards.length === 0 || rawCards.length > spread.card_count) {
+    return jsonResponse({ code: 'INVALID_CARDS', message: 'จำนวนไพ่ไม่ถูกต้อง' }, 400);
+  }
+
+  const resolvedCards = [];
+  for (const item of rawCards) {
+    const card = CARD_BY_ID.get(item?.cardId);
+    const pos = spread.positions.find((p) => p.index === Number(item?.posIndex));
+    if (!card || !pos) {
+      return jsonResponse({ code: 'UNKNOWN_CARD', message: 'ข้อมูลไพ่ไม่ตรงกับคัมภีร์' }, 400);
+    }
+    resolvedCards.push({ pos, card });
+  }
+
+  const question = typeof body?.question === 'string' ? body.question.trim().slice(0, 500) : '';
+  const geminiKey = env?.GEMINI_API_KEY;
+  const groqKey = env?.GROQ_API_KEY;
+
+  if (!geminiKey && !groqKey) {
+    return jsonResponse(
+      { code: 'NO_API_KEY', message: 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY บน Cloudflare Pages' },
+      503
+    );
+  }
+
+  const prompt = buildOraclePrompt({ spread, question, resolvedCards });
+  let sawQuota = false;
+
+  if (geminiKey) {
+    const primary = await callGemini(geminiKey, 'gemini-2.5-flash', prompt);
+    if (primary.reading) return jsonResponse(primary, 200);
+    if (primary.quotaExceeded) sawQuota = true;
+
+    const lite = await callGemini(geminiKey, 'gemini-2.5-flash-lite', prompt);
+    if (lite.reading) return jsonResponse(lite, 200);
+    if (lite.quotaExceeded) sawQuota = true;
+  }
+
+  if (groqKey) {
+    const backup = await callGroq(groqKey, prompt);
+    if (backup.reading) return jsonResponse(backup, 200);
+    if (backup.quotaExceeded) sawQuota = true;
+  }
+
+  if (sawQuota) {
+    return jsonResponse(
+      {
+        code: 'QUOTA_EXCEEDED',
+        message:
+          'พลังเวทของ AI ฟรีในชั่วโมงนี้มีผู้ใช้งานหนาแน่นเกินโควต้า คุณยังสามารถอ่านคำทำนายจากตำราโคลว์การ์ดต้นฉบับด้านล่างได้ครบถ้วนครับ'
+      },
+      429
+    );
+  }
+
+  return jsonResponse(
+    {
+      code: 'AI_UNAVAILABLE',
+      message: 'ห้องพยากรณ์ AI ไม่พร้อมใช้งานชั่วคราว กรุณาอ่านคำทำนายจากตำราต้นฉบับด้านล่างแทนครับ'
+    },
+    502
+  );
+}
