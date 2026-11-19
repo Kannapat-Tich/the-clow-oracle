@@ -151,6 +151,11 @@
         </button>
 
         <div class="flex flex-nowrap items-center gap-1 sm:gap-2 ml-auto min-w-0">
+          <button id="btn-home" onclick="resetToHome()"
+                  class="hidden btn-vintage-secondary whitespace-nowrap shrink-0 text-[10px] sm:text-xs font-fahkwang px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg leading-none">
+            ✦ หน้าหลัก
+          </button>
+
           <!-- Music Controls -->
           <div class="flex items-center bg-[#FCF4DC]/95 rounded-md sm:rounded-lg border border-[#8A5414] overflow-hidden shadow-xs min-w-0">
             <button id="btn-bgm-toggle" onclick="toggleBgm()"
@@ -170,8 +175,8 @@
             </button>
 
             <span id="bgm-track-title"
-                  class="px-1 sm:px-1.5 py-1 text-[10px] sm:text-xs font-fahkwang text-[#2A160E] max-w-[74px] sm:max-w-[185px] truncate select-none leading-none">
-              Akogare (ความปรารถนา)
+                  class="px-1 sm:px-1.5 py-1 text-[10px] sm:text-xs font-fahkwang text-[#2A160E] max-w-[74px] sm:max-w-[185px] overflow-hidden whitespace-nowrap block select-none leading-none">
+              <span id="bgm-track-title-inner" class="inline-block whitespace-nowrap">Akogare (ความปรารถนา)</span>
             </span>
 
             <button onclick="nextBgmTrack()"
@@ -183,11 +188,6 @@
               </svg>
             </button>
           </div>
-
-          <button id="btn-home" onclick="resetToHome()"
-                  class="hidden btn-vintage-secondary whitespace-nowrap shrink-0 text-[10px] sm:text-xs font-fahkwang px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg leading-none">
-            ✦ <span class="hidden sm:inline">สารบัญคัมภีร์</span><span class="sm:hidden">สารบัญ</span>
-          </button>
         </div>
       </div>
 
@@ -220,7 +220,7 @@
           เปิดตำราพยากรณ์ไพ่โคลว์การ์ดโบราณ
         </h1>
         <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">
-          สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ พร้อม AI ช่วยตีความให้ตรงกับเรื่องของคุณ
+          สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ
         </p>
       </div>
 
@@ -228,40 +228,19 @@
     </section>
 
     <!-- STEP 2 & 3: TABLETOP SHUFFLE, DRAW & 3D SPREAD BOARD -->
-    <section id="screen-table" class="hidden w-full space-y-2.5 sm:space-y-3.5">
-      <div class="vintage-frame rounded-lg px-3.5 sm:px-5 py-2 sm:py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-1.5 sm:gap-2.5">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-[#8A5414]">☽</span>
-            <span id="table-spread-eng" class="font-cinzel text-[11px] sm:text-xs tracking-[0.16em] sm:tracking-[0.18em] uppercase text-[#4F2031] truncate">
-              Daily Oracle
-            </span>
-          </div>
-          <h2 id="table-spread-title" class="font-charm text-xl sm:text-2xl md:text-3xl text-[#2A160E] leading-tight">
+    <section id="screen-table" class="hidden w-full space-y-2 sm:space-y-3">
+      <div id="table-top-banner" class="vintage-frame rounded-lg px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-xs text-[#8A5414] shrink-0">☽</span>
+          <h2 id="table-spread-title" class="font-charm text-base sm:text-lg md:text-xl text-[#2A160E] leading-tight truncate">
             ทำนายดวงรายวัน
           </h2>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <span id="table-progress-pill" class="whitespace-nowrap px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-fahkwang bg-[#8F5B6E]/20 text-[#2A160E] border border-[#8F5B6E]/65">
-            ตั้งจิตสับไพ่
-          </span>
-
-          <button id="btn-shuffle" onclick="resetCurrentSpreadSession()"
-                  class="btn-vintage-secondary whitespace-nowrap px-3 py-1 rounded-md text-[11px] sm:text-xs font-fahkwang min-h-[32px]">
-            ↻ เริ่มสับไพ่ใหม่
-          </button>
-
-          <button id="btn-reveal-all" onclick="revealAllCards()"
-                  class="hidden btn-vintage-primary whitespace-nowrap px-3.5 sm:px-4 py-1 rounded-md text-[11px] sm:text-xs font-fahkwang min-h-[32px]">
-            ✦ เปิดไพ่ทั้งหมด
-          </button>
-
-          <button id="btn-full-reading" onclick="openFullReadingModal()"
-                  class="hidden btn-vintage-primary whitespace-nowrap px-3.5 sm:px-4 py-1 rounded-md text-[11px] sm:text-xs font-fahkwang min-h-[32px]">
-            ✦ อ่านคำทำนายฉบับเต็ม + AI
-          </button>
-        </div>
+        <button id="btn-shuffle" onclick="resetCurrentSpreadSession()"
+                class="btn-vintage-secondary whitespace-nowrap px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-fahkwang min-h-[20px] leading-none shrink-0">
+          ↻ สับไพ่ใหม่
+        </button>
       </div>
 
       <div id="table-workspace" class="w-full flex flex-col lg:flex-row items-stretch justify-center gap-3 sm:gap-4">
@@ -271,7 +250,7 @@
             <div class="flex items-center gap-1.5">
               <span class="text-[#8A5414] text-xs">✦</span>
               <span class="font-fahkwang text-xs sm:text-sm text-[#2A160E]">
-                แท่นวางไพ่พยากรณ์โบราณ (เปิดตามลำดับคู่มือ)
+                แท่นวางไพ่พยากรณ์ (เปิดตามลำดับคู่มือ)
               </span>
             </div>
             <span id="board-stage-hint" class="font-pridi text-[11px] sm:text-xs text-[#4F2031]">
@@ -291,10 +270,16 @@
           <div id="board-summary-cta" class="hidden mt-2.5 sm:mt-3 bg-[#F8DF94]/55 border border-[#4F2031]/45 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
             <div class="space-y-0.5">
               <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">✦ เปิดอ่านไพ่ครบทุกตำแหน่งแล้ว</p>
-              <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปร้อยเรียงคำทำนายรวมทุกใบ พร้อม AI วิเคราะห์เชื่อมโยงกับเรื่องของคุณ</p>
+              <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปคำทำนายรวมทุกใบ</p>
             </div>
             <button onclick="openFullReadingModal()" class="btn-vintage-plum whitespace-nowrap px-4 py-2 rounded-md text-xs font-fahkwang shrink-0">
-              ✦ อ่านบทสรุปคำทำนายรวม + AI
+              ✦ อ่านบทสรุปคำทำนายรวม
+            </button>
+          </div>
+
+          <div id="board-reveal-all-footer" class="hidden mt-2.5 sm:mt-3 flex justify-center">
+            <button onclick="revealAllAndOpenSummary()" class="btn-vintage-primary whitespace-nowrap px-5 py-2 rounded-md text-xs font-fahkwang">
+              ✦ เปิดไพ่ทั้งหมดและดูบทสรุป
             </button>
           </div>
         </div>
@@ -328,13 +313,23 @@
                         class="w-full rounded-md bg-[#FFFDF5]/85 border border-[#8A5414]/70 px-3 py-2 font-pridi text-xs sm:text-sm text-[#2A160E] placeholder-[#523020]/55 focus:outline-none focus:border-[#4F2031] focus:ring-1 focus:ring-[#4F2031]"></textarea>
 
               <div class="bg-[#8F5B6E]/12 border border-[#8F5B6E]/45 rounded-md p-2.5 flex items-start gap-2">
-                <span class="text-[#4F2031] text-sm mt-0.5 shrink-0">🔒</span>
+                <span class="text-[#4F2031] mt-0.5 shrink-0" aria-hidden="true">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <rect x="9.5" y="11" width="5" height="4" rx="1"/>
+                    <path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/>
+                  </svg>
+                </span>
                 <div class="space-y-0.5 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
                   <p class="font-fahkwang text-[#4F2031]">การคุ้มครองข้อมูลส่วนบุคคลและความลับของคุณ</p>
                   <p class="text-[#523020]">
                     ข้อความของคุณอยู่ในอุปกรณ์ของคุณเท่านั้น หากหลังเปิดไพ่คุณเลือกกดปุ่ม <strong>"ให้ AI ช่วยตีความ"</strong> ระบบจะส่งเฉพาะคำถามและชื่อไพ่ไปประมวลผลแบบชั่วคราว <strong>ไม่มีการบันทึกลงฐานข้อมูลและไม่เก็บประวัติส่วนตัว</strong>
                   </p>
                 </div>
+              </div>
+
+              <div id="question-ai-status-note" class="bg-[#FCF4DC]/80 border border-[#8A5414]/35 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#523020] leading-relaxed">
+                ✦ ระบบมี 2 รูปแบบ: <strong>คำทำนายจาก AI ที่อ่านเรื่องราวของคุณโดยตรง</strong> และ <strong>คำทำนายจากตำราโคลว์</strong> (หากโควตา AI ช่วงนั้นเต็ม ระบบจะสลับใช้ตำราโคลว์ให้อัตโนมัติ)
               </div>
             </div>
 
@@ -349,14 +344,14 @@
           </div>
 
           <!-- PHASE 1: SHUFFLE STACK -->
-          <div id="ritual-stack-stage" class="py-2 sm:py-2.5 flex flex-col items-center justify-center gap-2.5 sm:gap-3">
+          <div id="ritual-stack-stage" class="py-2 sm:py-2.5 flex flex-col items-center justify-center gap-4 sm:gap-5">
             <div class="flex flex-wrap items-center justify-center gap-2 w-full">
               <button onclick="handleDeckStackInteraction()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
                 ↻ สับสำรับไพ่
               </button>
             </div>
 
-            <div class="relative flex flex-col items-center justify-center pt-1 pb-2">
+            <div class="relative flex flex-col items-center justify-center pt-5 pb-2">
               <div id="interactive-deck-touchzone"
                    onclick="handleDeckStackInteraction()"
                    class="interactive-deck-wrap relative z-10 w-24 sm:w-28 md:w-32 clow-aspect select-none"
@@ -379,35 +374,35 @@
           </div>
 
           <!-- PHASE 1.5: CUT DECK -->
-          <div id="ritual-cut-stage" class="hidden py-2 sm:py-2.5 flex flex-col items-center justify-center gap-3 overflow-hidden">
-            <div class="w-full flex items-center justify-center overflow-visible py-1">
+          <div id="ritual-cut-stage" class="hidden py-3 sm:py-4 flex flex-col items-center justify-center gap-4 overflow-hidden">
+            <div class="w-full flex flex-col items-center justify-center overflow-visible py-2">
               <div id="cut-deck-touchzone"
                    onclick="performDeckCut()"
                    class="interactive-deck-wrap relative w-24 sm:w-28 md:w-32 clow-aspect select-none overflow-visible"
                    title="แตะเพื่อตัดแบ่งครึ่งกองไพ่">
-                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(-20px, 5px); z-index: 10;">
-                  <div class="w-full h-full absolute top-1 left-1 rounded-[6px] bg-[#3E1727] border border-[#4A1F12]"></div>
+                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(-34px, 6px); z-index: 10;">
+                  <div class="w-full h-full absolute top-1.5 left-1.5 rounded-[7px] bg-[#3E1727]/85 border border-[#4A1F12]/80"></div>
                   <div id="cut-bottom-card" class="w-full h-full relative"></div>
-                  <span class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] text-[#523020]">
+                  <span class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] text-[#523020] bg-[#FCF4DC]/80 px-1.5 rounded">
                     กองครึ่งล่าง
                   </span>
                 </div>
 
-                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(-24px, 0px); z-index: 20;">
+                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(-38px, 0px); z-index: 20;">
                   <div id="cut-top-card" class="w-full h-full relative"></div>
                 </div>
 
                 <div id="cut-target-ghost"
-                     style="transform: translate(44px, 6px);"
-                     class="absolute inset-0 rounded-[6px] border border-dashed border-[#8A5414]/75 bg-[#FCF4DC]/55 flex items-center justify-center pointer-events-none">
-                  <span class="font-fahkwang text-[9px] text-[#4F2031]/85 text-center px-1 leading-tight">
+                     style="transform: translate(36px, 6px);"
+                     class="absolute inset-0 rounded-[7px] border-2 border-dashed border-[#8A5414]/65 bg-[#FCF4DC]/45 flex items-center justify-center pointer-events-none">
+                  <span class="font-fahkwang text-[10px] text-[#4F2031]/85 text-center px-1 leading-snug">
                     จุดวาง<br>กองตัด
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="pt-2.5 flex flex-wrap items-center justify-center gap-2.5">
+            <div class="pt-3 flex flex-wrap items-center justify-center gap-2.5">
               <button id="btn-trigger-cut" onclick="performDeckCut()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
                 ✂ ตัดกองไพ่และสลับกอง
               </button>
@@ -416,22 +411,28 @@
 
           <!-- PHASE 2: RIBBON SPREAD (52 CARDS) -->
           <div id="fan-draw-stage" class="hidden space-y-2">
-            <div id="fan-arc-container"
-                 class="w-full py-2 sm:py-2.5 px-1 flex flex-col items-center justify-center overflow-visible select-none"></div>
-
-            <div class="flex flex-col items-center justify-center gap-1.5 pt-0.5 text-center">
-              <p id="fan-hover-hint" class="font-fahkwang text-[11px] text-[#4F2031] bg-[#F4DC9C]/90 px-3 py-1 rounded border border-[#8A5414]/55">
+            <div class="flex flex-col items-center justify-center gap-2">
+              <p id="fan-hover-hint" class="font-fahkwang text-[11px] text-[#4F2031] bg-[#F4DC9C]/90 px-3 py-1 rounded border border-[#8A5414]/55 text-center">
                 ใช้ความรู้สึกแวบแรก แตะเลือกใบที่สะดุดตาที่สุดจากสำรับ 52 ใบ
               </p>
 
-              <p class="font-pridi text-[11px] text-[#5E2C1B] bg-[#8F5B6E]/15 px-3 py-1 rounded border border-[#8F5B6E]/45 leading-relaxed max-w-lg">
-                ※ เมื่อเลือกไพ่แล้วจะไม่สามารถเปลี่ยนใบได้ หากต้องการเลือกใหม่จะต้องกด <strong>"เริ่มสับไพ่ใหม่"</strong> ตั้งแต่ต้น
-              </p>
-
-              <button id="btn-quick-draw" onclick="drawRandomAvailableCard()" class="btn-vintage-secondary whitespace-nowrap px-3.5 py-1.5 sm:py-1 rounded-md text-xs font-fahkwang min-h-[34px] sm:min-h-0">
-                ✦ ให้โชคชะตาเลือกให้ 1 ใบ
-              </button>
+              <div class="flex flex-col items-center justify-center gap-2 text-center">
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                  <button id="btn-quick-draw" onclick="drawRandomAvailableCard()" class="btn-vintage-secondary whitespace-nowrap px-3.5 py-1.5 sm:py-1 rounded-md text-xs font-fahkwang min-h-[34px] sm:min-h-0">
+                    ✦ ให้โชคชะตาเลือกให้ 1 ใบ
+                  </button>
+                  <button id="btn-quick-draw-all" onclick="drawAllRemainingCards()" class="btn-vintage-secondary whitespace-nowrap px-3.5 py-1.5 sm:py-1 rounded-md text-xs font-fahkwang min-h-[34px] sm:min-h-0">
+                    ✦ ให้ชะตาเลือกให้ทั้งหมด
+                  </button>
+                </div>
+                <button id="btn-confirm-armed-card" onclick="confirmArmedCardSelection()" class="hidden btn-vintage-primary whitespace-nowrap px-5 py-1.5 rounded-md text-xs font-fahkwang min-h-[34px] sm:min-h-0 shadow-sm">
+                  ✦ คลิกเพื่อเลือก
+                </button>
+              </div>
             </div>
+
+            <div id="fan-arc-container"
+                 class="w-full py-2 sm:py-2.5 px-1 flex flex-col items-center justify-center overflow-visible select-none"></div>
           </div>
 
           <!-- PHASE 3: DOCKED RESTING DECK -->
@@ -472,8 +473,9 @@
         โปรดสำรวมจิตและเลือกไพ่คว่ำใบที่ท่านรู้สึก<strong>ถูกชะตา</strong>หรือสะดุดตาที่สุดในความรู้สึกแวบแรก
       </p>
 
-      <div class="bg-[#8F5B6E]/15 border border-[#8F5B6E]/55 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#4F2031] leading-relaxed">
-        <strong>※ หมายเหตุสำคัญ:</strong> เมื่อแตะเลือกไพ่แล้ว <strong>ท่านจะไม่สามารถเปลี่ยนใบใหม่ได้</strong> หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น
+      <div class="bg-[#FFF4D6] border-2 border-[#D97706] rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#7C2D12] leading-relaxed">
+        <strong class="block text-sm font-fahkwang text-[#C2410C] mb-0.5">⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้</strong>
+        เมื่อแตะเลือกไพ่แล้ว หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น
       </div>
 
       <div class="pt-1">
@@ -487,40 +489,45 @@
   </div>
 
   <!-- READING MODAL -->
-  <div id="reading-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
-    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl p-4 sm:p-6 md:p-8 shadow-2xl">
-      <div class="flex items-center justify-between gap-2 border-b border-[#8A5414]/50 pb-2.5 mb-3.5 sm:mb-5">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="text-[#8A5414] text-sm shrink-0">☀</span>
-          <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.14em] sm:tracking-[0.18em] uppercase text-[#4F2031] truncate">
-            Clow Card Oracle Reading
+  <div id="reading-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pb-3 sm:px-6 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
+    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl px-4 pb-4 pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
+      <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 mb-3 bg-[#FBF1D4]/98 border-b border-[#8A5414]/45 flex items-center justify-between gap-2 backdrop-blur-[2px]">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-[#8A5414] text-xs shrink-0">☀</span>
+          <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.14em] uppercase text-[#4F2031] truncate">
+            The Clow Cards
           </span>
         </div>
-        <button onclick="closeReadingModal()" class="btn-vintage-secondary shrink-0 text-xs font-fahkwang px-3 py-1.5 rounded-md min-h-[34px]">
+        <button onclick="closeReadingModal()" class="btn-vintage-secondary shrink-0 text-[11px] font-fahkwang px-2.5 py-1 rounded-md min-h-[28px]">
           ปิดหน้าต่าง ✕
         </button>
       </div>
 
       <div id="modal-reading-body"></div>
 
-      <div class="mt-5 sm:mt-6 pt-3.5 border-t border-[#8A5414]/45 flex flex-wrap items-center justify-between gap-3">
-        <span class="font-charm text-lg sm:text-xl text-[#523020]">
-          ~ คัมภีร์พยากรณ์แห่งโคลว์ ~
-        </span>
-        <div id="reading-modal-footer-actions" class="flex flex-wrap items-center gap-2 ml-auto">
-          <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-            กลับสู่แท่นพยากรณ์
-          </button>
-        </div>
+      <div id="reading-modal-footer-bar" class="hidden mt-4 pt-3 border-t border-[#8A5414]/45 flex items-center justify-end gap-2">
+        <div id="reading-modal-footer-actions" class="flex flex-wrap items-center gap-2 ml-auto"></div>
       </div>
     </div>
   </div>
 
+  <!-- FLOATING QUEST GUIDE ARROW (ชี้ไปยังไพ่ใบถัดไปเมื่ออยู่ต่ำกว่าหน้าจอ) -->
+  <button id="quest-nav-arrow"
+          onclick="scrollToNextQuestCard()"
+          class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 btn-vintage-primary px-4 py-2 rounded-full text-xs font-fahkwang shadow-lg flex items-center gap-1.5 animate-bounce">
+    <span id="quest-nav-arrow-text">↓ แตะเปิดไพ่ลำดับถัดไป</span>
+  </button>
+
   <!-- FOOTER -->
   <footer class="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2.5 pb-4 sm:pb-5 relative z-10">
     <div class="border-t border-[#8A5414]/45 pt-2.5 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
-      <p>✦ โปรเจกต์ Fanmade จัดทำขึ้นเพื่อความบันเทิงและฝึกฝนทักษะการพัฒนาเว็บเท่านั้น ไม่มีการแสวงหารายได้</p>
-      <p class="font-cinzel text-[11px] tracking-wide text-[#2A160E]/85">© CLAMP, ST, Kodansha / NHK, NEP.</p>
+      <p>✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)</p>
+      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3">
+        <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang">
+          ✉ ส่งข้อเสนอแนะ (clowcardreader.dev@gmail.com)
+        </a>
+        <p class="font-cinzel text-[11px] tracking-wide text-[#2A160E]/85">© CLAMP, ST, Kodansha / NHK, NEP.</p>
+      </div>
     </div>
   </footer>
 

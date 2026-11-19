@@ -390,9 +390,9 @@ body {
 }
 
 .draw-row-card {
-  transition: transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+  transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.28s ease,
-              opacity 0.44s ease;
+              opacity 0.72s ease-out;
   will-change: transform, opacity;
   touch-action: manipulation;
 }
@@ -407,10 +407,42 @@ body {
   transform: translateY(-6px) scale(1.04);
   z-index: 60 !important;
 }
+.draw-row-card.is-armed {
+  transform: translateY(-14px) scale(1.1) !important;
+  z-index: 70 !important;
+  box-shadow: 0 0 0 2px #EBB844, 0 14px 24px -4px rgba(79, 32, 49, 0.42);
+}
+.draw-row-card.is-armed::after {
+  content: "แตะซ้ำเพื่อยืนยัน";
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #4F2031;
+  color: #FCF4DC;
+  border: 1px solid #EBB844;
+  font-family: 'Fahkwang', sans-serif;
+  font-size: 9px;
+  line-height: 1.3;
+  box-shadow: 0 4px 10px rgba(42, 22, 14, 0.35);
+  pointer-events: none;
+}
+@keyframes pickFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(-14px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-42px) scale(0.96);
+  }
+}
 .draw-row-card:disabled,
 .draw-row-card.is-picked {
-  opacity: 0 !important;
-  transform: translateY(-10px) scale(0.95) !important;
+  animation: pickFadeOut 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: none;
 }
 
@@ -510,6 +542,19 @@ body {
   background: linear-gradient(180deg, #F9E3A6 0%, #E7C675 100%);
   border-color: #4A1F12;
 }
+.btn-vintage-secondary:disabled {
+  background: linear-gradient(180deg, #E4E1DA 0%, #CFCBC2 100%);
+  color: #8C877C;
+  border-color: #ABA69B;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* ให้แถบหัวเว็บ (THE CLOW + เพลง) อยู่เหนือป็อปอัปคำทำนาย */
+body.reading-modal-open #main-header {
+  z-index: 60;
+}
 
 .center-oracle-stage {
   background:
@@ -520,6 +565,21 @@ body {
     inset 0 0 0 6px #9E661A,
     inset 0 0 42px rgba(79, 32, 49, 0.14),
     0 20px 42px -12px rgba(42, 22, 14, 0.28);
+}
+
+.clow-frame,
+.clow-frame img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.bgm-marquee-active {
+  animation: bgmMarquee var(--marquee-dur, 7s) linear infinite alternate;
+}
+@keyframes bgmMarquee {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--marquee-dist, 0px)); }
 }
 
 .active-card-spotlight {

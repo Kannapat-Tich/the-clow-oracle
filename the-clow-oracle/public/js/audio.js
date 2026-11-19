@@ -15,8 +15,14 @@ let currentBgmTrackIdx = 0;
 let bgmFadeTimer = null;
 let pendingAutoplayUnlock = false;
 let unlockListenersAttached = false;
+let ytPlayer = null;
+let ytReady = false;
+let ytApiLoading = false;
+let pendingYtVideoId = null;
 
-const UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'click', 'keydown'];
+// iOS Safari อนุญาตให้ปลดล็อกเสียงบน touchend / click / keydown (ไม่ใช้ pointerdown/touchstart)
+const UNLOCK_EVENTS = ['touchend', 'click', 'keydown'];
+let isUnlockingNow = false;
 
 function detachAutoplayUnlockListeners() {
   if (!unlockListenersAttached) return;
@@ -39,8 +45,13 @@ function handleFirstUserGestureUnlock(event) {
     }
   }
 
+  if (isUnlockingNow) return;
+  isUnlockingNow = true;
   getAudioCtx();
   startBgmPlayback({ isAutoAttempt: false });
+  setTimeout(() => {
+    isUnlockingNow = false;
+  }, 150);
 }
 
 function armAutoplayUnlockListeners() {
@@ -101,11 +112,24 @@ export function updateBgmUI(statusOverride = null) {
   const statusEl = document.getElementById('bgm-status-text');
   const iconEl = document.getElementById('bgm-icon');
   const btnEl = document.getElementById('btn-bgm-toggle');
-  const titleEl = document.getElementById('bgm-track-title');
+  const titleBox = document.getElementById('bgm-track-title');
+  const titleInner = document.getElementById('bgm-track-title-inner');
 
   const track = BGM_TRACKS[currentBgmTrackIdx] || BGM_TRACKS[0];
-  if (titleEl) {
-    titleEl.textContent = statusOverride || (track ? track.title : 'ไม่มีเพลง');
+  const displayTitle = statusOverride || (track ? track.title : 'ไม่มีเพลง');
+  if (titleInner && titleBox) {
+    titleInner.classList.remove('bgm-marquee-active');
+    titleInner.textContent = displayTitle;
+    requestAnimationFrame(() => {
+      const overflow = titleInner.scrollWidth - titleBox.clientWidth;
+      if (overflow > 4) {
+        titleInner.style.setProperty('--marquee-dist', `-${overflow + 6}px`);
+        titleInner.style.setProperty('--marquee-dur', `${Math.max(5, Math.round(overflow / 18) + 3)}s`);
+        titleInner.classList.add('bgm-marquee-active');
+      }
+    });
+  } else if (titleBox) {
+    titleBox.textContent = displayTitle;
   }
 
   if (!statusEl || !iconEl || !btnEl) return;
@@ -152,16 +176,105 @@ export function initAutoBgm() {
   startBgmPlayback({ isAutoAttempt: true });
 }
 
+function pauseYouTubePlayer() {
+  pendingYtVideoId = null;
+  if (ytPlayer && ytReady && typeof ytPlayer.pauseVideo === 'function') {
+    try {
+      ytPlayer.pauseVideo();
+    } catch (_) {}
+  }
+}
+
+function playYouTubeTrack(videoId) {
+  pendingYtVideoId = videoId;
+  if (ytPlayer && ytReady && typeof ytPlayer.loadVideoById === 'function') {
+    try {
+      ytPlayer.setVolume(45);
+      ytPlayer.loadVideoById(videoId);
+      ytPlayer.playVideo();
+      pendingAutoplayUnlock = false;
+      detachAutoplayUnlockListeners();
+    } catch (_) {}
+    return;
+  }
+
+  const createPlayer = () => {
+    if (ytPlayer || !window.YT || !window.YT.Player) return;
+    let host = document.getElementById('bgm-yt-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'bgm-yt-host';
+      host.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;';
+      document.body.appendChild(host);
+    }
+    ytPlayer = new window.YT.Player(host, {
+      width: 1,
+      height: 1,
+      videoId: pendingYtVideoId || videoId,
+      playerVars: { autoplay: 1, controls: 0, playsinline: 1 },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          try {
+            ytPlayer.setVolume(45);
+            if (isBgmPlaying && pendingYtVideoId) {
+              ytPlayer.loadVideoById(pendingYtVideoId);
+              ytPlayer.playVideo();
+            }
+          } catch (_) {}
+        },
+        onStateChange: (evt) => {
+          if (evt && evt.data === 0 && isBgmPlaying && BGM_TRACKS.length > 0) {
+            currentBgmTrackIdx = (currentBgmTrackIdx + 1) % BGM_TRACKS.length;
+            startBgmPlayback();
+          }
+        }
+      }
+    });
+  };
+
+  if (window.YT && window.YT.Player) {
+    createPlayer();
+    return;
+  }
+
+  if (!ytApiLoading) {
+    ytApiLoading = true;
+    const prevReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof prevReady === 'function') prevReady();
+      createPlayer();
+    };
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.async = true;
+    tag.onerror = () => {
+      ytApiLoading = false;
+    };
+    document.head.appendChild(tag);
+  }
+}
+
 export function startBgmPlayback({ isAutoAttempt = false } = {}) {
   const track = BGM_TRACKS[currentBgmTrackIdx] || BGM_TRACKS[0];
   const player = getBgmPlayer();
-  if (!player || !track || !track.url) {
+  if (!track || (!track.url && !track.youtubeId)) {
     updateBgmUI();
     return;
   }
 
   isBgmPlaying = true;
   updateBgmUI();
+
+  if (track.youtubeId) {
+    if (bgmFadeTimer) clearInterval(bgmFadeTimer);
+    if (player) player.pause();
+    playYouTubeTrack(track.youtubeId);
+    return;
+  }
+
+  pauseYouTubePlayer();
+  if (!player) return;
 
   const desiredTrackKey = String(track.id);
   const currentTrackKey = player.getAttribute('data-current-track-id');
@@ -211,6 +324,7 @@ export function stopBgmPlayback() {
   if (bgmFadeTimer) clearInterval(bgmFadeTimer);
   const player = getBgmPlayer();
   if (player) player.pause();
+  pauseYouTubePlayer();
   updateBgmUI();
 }
 

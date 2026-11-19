@@ -19,5 +19,20 @@ export const BGM_TRACKS = [
     id: 2,
     title: 'Roller Blade',
     url: './assets/bgm/roller-blade.mp3'
+  },
+  {
+    id: 3,
+    title: 'Shiawase no Sakura Namiki (ถนนซากุระแห่งความสุข)',
+    youtubeId: 'UmtQzuP2wkI'
+  },
+  {
+    id: 4,
+    title: 'Yume (ความฝัน)',
+    youtubeId: 't46wJRYJJ_M'
+  },
+  {
+    id: 5,
+    title: 'Sawayakana Asa (ยามเช้าอันสดใส)',
+    youtubeId: 'PUKGrE8Og0g'
   }
 ];

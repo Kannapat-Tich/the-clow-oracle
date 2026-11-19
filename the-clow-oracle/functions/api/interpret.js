@@ -23,6 +23,13 @@ const RATE_LIMIT_MAX_REQ = 6;
 
 function isRateLimited(ip) {
   const now = Date.now();
+  if (ipHits.size > 500) {
+    for (const [key, val] of ipHits.entries()) {
+      if (now - val.windowStart > RATE_LIMIT_WINDOW_MS) {
+        ipHits.delete(key);
+      }
+    }
+  }
   const record = ipHits.get(ip);
   if (!record || now - record.windowStart > RATE_LIMIT_WINDOW_MS) {
     ipHits.set(ip, { count: 1, windowStart: now });
@@ -42,7 +49,7 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-function buildOraclePrompt({ spread, question, resolvedCards }) {
+function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
   const cardsText = resolvedCards
     .map(
       ({ pos, card }) =>
@@ -54,6 +61,28 @@ function buildOraclePrompt({ spread, question, resolvedCards }) {
     )
     .join('\n\n');
 
+  if (lang === 'en') {
+    const qBlockEn = question
+      ? `User's question/context:\n"""${question}"""`
+      : 'The user did not type a question (kept it in mind). Interpret the card spread cohesively.';
+    return (
+      `You are the warm, thoughtful keeper of "THE CLOW" Clow Card Oracle.\n` +
+      `Rules:\n` +
+      `1. Stay faithful to the guidebook card meanings and warnings below.\n` +
+      `2. Directly weave the user's question/context into every section (overview, per-position insight, advice).\n` +
+      `3. Respond ONLY with valid JSON matching this exact schema in natural, clear English:\n` +
+      `{\n` +
+      `  "overview": "Concise sequential summary of all drawn cards (3-5 sentences)",\n` +
+      `  "connections": [\n` +
+      `    { "positionIndex": 1, "positionTitle": "Position Title", "cardName": "CARD NAME", "insight": "Direct 2-3 sentence reading tailored to this position and user's context" }\n` +
+      `  ],\n` +
+      `  "advice": ["1-2 concise warning sentences summarizing the key cautions across the cards"],\n` +
+      `  "closing": "1 warm encouraging closing sentence"\n` +
+      `}\n\n` +
+      `Spread: ${spread.engTitle}\n${qBlockEn}\n\nGuidebook Card Data:\n${cardsText}`
+    );
+  }
+
   const userQuestionBlock = question
     ? `ปัญหา/คำถามที่ผู้ใช้เล่ามา:\n"""${question}"""`
     : 'ผู้ใช้ไม่ได้ระบุคำถามเป็นข้อความ (อธิษฐานในใจ) ให้ตีความเชื่อมโยงภาพรวมของหน้าไพ่ให้สอดคล้องกันอย่างลึกซึ้ง';
@@ -63,20 +92,20 @@ function buildOraclePrompt({ spread, question, resolvedCards }) {
     `กติกาสำคัญ:\n` +
     `1. ยึดความหมายหลักและข้อควรระวังจากคู่มือที่ให้ไว้ด้านล่างเป็นแกนหลัก ห้ามแต่งความหมายไพ่ขัดแย้งกับคู่มือ\n` +
     `2. ต้องตอบให้ตรงและเชื่อมโยงกับ "ปัญหา/คำถามที่ผู้ใช้เล่ามา" อย่างชัดเจนในทุกส่วน ทั้งภาพรวม (overview), คำอธิบายรายตำแหน่ง (insight), และคำแนะนำ (advice) ห้ามคัดลอกคำอธิบายคู่มือแบบกว้างๆ โดยไม่ผูกกับบริบทของผู้ใช้\n` +
-    `3. ให้คำแนะนำที่นำไปใช้ในชีวิตจริงได้จริง อ่านง่าย ไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
-    `4. ใช้ภาษาไทยสละสลวย อบอุ่น มีกลิ่นอายคัมภีร์เวทโบราณแบบ Cardcaptor Sakura แต่เข้าใจง่ายร่วมสมัย\n` +
+    `3. ใน "overview" ต้องเล่าเรื่องตามลำดับของไพ่ทีละใบอย่างกระชับและเข้าใจง่าย ว่าไพ่แต่ละใบบอกอะไรกับผู้ถามตั้งแต่ใบแรกจนถึงใบสุดท้าย โดยไม่ต้องเน้นชื่อไพ่หรือศัพท์ตำแหน่งที่ทำให้ผู้อ่านสับสน\n` +
+    `4. ใช้ภาษาไทยสละสลวย เข้าใจง่าย เป็นธรรมชาติ **ห้ามใช้เครื่องหมายคอมม่า (,) ในประโยคภาษาไทย** และไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
     `5. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
     `{\n` +
-    `  "overview": "สรุปคำตอบภาพรวม 3-5 ประโยคที่เชื่อมโยงไพ่ทั้งหมดเข้ากับปัญหาของผู้ใช้โดยตรง",\n` +
+    `  "overview": "เล่าสรุปตามลำดับของไพ่ทีละใบอย่างกระชับว่าไพ่แต่ละใบบอกอะไรกับปัญหาของผู้ใช้โดยตรง (3-5 ประโยค)",\n` +
     `  "connections": [\n` +
     `    {\n` +
     `      "positionIndex": 1,\n` +
     `      "positionTitle": "ชื่อตำแหน่ง",\n` +
     `      "cardName": "ชื่อไพ่ (ชื่อไทย)",\n` +
-    `      "insight": "อธิบายว่าไพ่ใบนี้ในตำแหน่งนี้สื่อถึงอะไรกับปัญหาของผู้ใช้ (2-3 ประโยค)"\n` +
+    `      "insight": "อธิบายตรงๆ ว่าไพ่ใบนี้บอกอะไรกับผู้ถามและสถานการณ์ในตำแหน่งนี้ (2-3 ประโยคกระชับ ไม่ต้องย้ำชื่อไพ่ และห้ามใช้คอมม่า)"\n` +
     `    }\n` +
     `  ],\n` +
-    `  "advice": ["คำแนะนำหรือข้อควรระวังที่ทำตามได้จริงข้อที่ 1", "ข้อที่ 2", "ข้อที่ 3"],\n` +
+    `  "advice": ["สรุปคำเตือนที่สำคัญที่สุดให้สั้นและกระชับที่สุด เพียง 1-2 ประโยคสั้นๆ (ไม่ต้องใส่คำนำหน้าว่า ไพ่เหล่านี้ต้องการเตือนคุณว่า และห้ามใช้เครื่องหมายคอมม่า)"],\n` +
     `  "closing": "ข้อความให้กำลังใจสั้นๆ 1 ประโยคสไตล์คัมภีร์โคลว์"\n` +
     `}\n\n` +
     `ผังการเปิดไพ่: ${spread.name} (${spread.engTitle})\n` +
@@ -104,6 +133,7 @@ async function callGemini(apiKey, model, prompt) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(endpoint, {
     method: 'POST',
+    signal: AbortSignal.timeout(12000),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -132,6 +162,7 @@ async function callGemini(apiKey, model, prompt) {
 async function callGroq(apiKey, prompt) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
+    signal: AbortSignal.timeout(12000),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`
@@ -197,6 +228,7 @@ export async function onRequestPost(context) {
   }
 
   const question = typeof body?.question === 'string' ? body.question.trim().slice(0, 500) : '';
+  const lang = body?.lang === 'en' ? 'en' : 'th';
   const geminiKey = env?.GEMINI_API_KEY;
   const groqKey = env?.GROQ_API_KEY;
 
@@ -207,17 +239,17 @@ export async function onRequestPost(context) {
     );
   }
 
-  const prompt = buildOraclePrompt({ spread, question, resolvedCards });
+  const prompt = buildOraclePrompt({ spread, question, resolvedCards, lang });
   let sawQuota = false;
 
   if (geminiKey) {
-    const primary = await callGemini(geminiKey, 'gemini-2.5-flash', prompt);
-    if (primary.reading) return jsonResponse(primary, 200);
-    if (primary.quotaExceeded) sawQuota = true;
-
     const lite = await callGemini(geminiKey, 'gemini-2.5-flash-lite', prompt);
     if (lite.reading) return jsonResponse(lite, 200);
     if (lite.quotaExceeded) sawQuota = true;
+
+    const primary = await callGemini(geminiKey, 'gemini-2.5-flash', prompt);
+    if (primary.reading) return jsonResponse(primary, 200);
+    if (primary.quotaExceeded) sawQuota = true;
   }
 
   if (groqKey) {
