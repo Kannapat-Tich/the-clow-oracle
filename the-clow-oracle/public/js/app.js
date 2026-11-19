@@ -719,6 +719,10 @@ function selectSpread(spreadId) {
   document.getElementById('btn-home').classList.remove('hidden');
 
   document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
+  const bannerIcon = document.querySelector('#table-top-banner span.text-xs');
+  if (bannerIcon) {
+    bannerIcon.textContent = activeSpread.spread_id === 'love_cross' ? '♥' : '☽';
+  }
   trackEvent('spread_start', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name });
 
   triggerPageFade(tableScreen);
@@ -1436,7 +1440,7 @@ function openSingleCardModal(posIndex) {
         <h3 class="font-charm text-xl text-[#4F2031]">${card.thaiName}</h3>
       </div>
 
-      <div class="w-40 sm:w-48 md:w-52 h-auto shrink-0 mx-auto sm:mx-0" data-card-front-slot="${card.id}">
+      <div class="w-48 sm:w-56 md:w-64 h-auto shrink-0 mx-auto sm:mx-0 hero-float-2" data-card-front-slot="${card.id}">
         ${buildMinimalCardFrontHTML(card)}
       </div>
 
@@ -1595,7 +1599,7 @@ function openFullReadingModal() {
       slots
         .map(
           (slot) => `
-          <div class="w-20 sm:w-24 md:w-28 shrink-0" data-card-front-slot="${slot.card.id}" title="${slot.card.name} — ${slot.card.thaiName}">
+          <div class="w-20 sm:w-24 md:w-28 shrink-0 hero-float-2" data-card-front-slot="${slot.card.id}" title="${slot.card.name} — ${slot.card.thaiName}">
             ${buildMinimalCardFrontHTML(slot.card)}
           </div>
         `
@@ -1650,10 +1654,13 @@ function syncReadingModalOffset(modal) {
   if (!modal) return;
   const headerEl = document.getElementById('main-header');
   const headerBottom = headerEl ? Math.ceil(headerEl.getBoundingClientRect().bottom) : 64;
-  modal.style.paddingTop = `${headerBottom + 4}px`;
+  const isMobile = window.innerWidth < 640;
+  modal.classList.toggle('items-start', isMobile);
+  modal.classList.toggle('items-center', !isMobile);
+  modal.style.paddingTop = `${headerBottom + (isMobile ? 10 : 6)}px`;
   const scrollBox = modal.querySelector('.editorial-scroll');
   if (scrollBox) {
-    scrollBox.style.maxHeight = `calc(100vh - ${headerBottom + 16}px)`;
+    scrollBox.style.maxHeight = `calc(100vh - ${headerBottom + (isMobile ? 22 : 18)}px)`;
   }
 }
 
@@ -1885,6 +1892,10 @@ function toggleLanguage() {
   initSpreadNavigation();
   if (activeSpread) {
     document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
+  const bannerIcon = document.querySelector('#table-top-banner span.text-xs');
+  if (bannerIcon) {
+    bannerIcon.textContent = activeSpread.spread_id === 'love_cross' ? '♥' : '☽';
+  }
     updateRitualPhaseBadges(ritualPhase);
     updateQuestionAiStatusNote();
     const qInput = document.getElementById('user-question-input');

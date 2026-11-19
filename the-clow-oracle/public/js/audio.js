@@ -90,7 +90,7 @@ function getBgmPlayer() {
   return player;
 }
 
-function fadeInAudioVolume(player, targetVolume = 0.42) {
+function fadeInAudioVolume(player, targetVolume = 0.22) {
   if (!player) return;
   if (bgmFadeTimer) clearInterval(bgmFadeTimer);
   player.volume = 0.08;
@@ -171,9 +171,8 @@ export function preloadAllBgmTracks() {
 }
 
 export function initAutoBgm() {
-  isBgmPlaying = true;
+  isBgmPlaying = false;
   updateBgmUI();
-  startBgmPlayback({ isAutoAttempt: true });
 }
 
 function pauseYouTubePlayer() {
@@ -189,7 +188,7 @@ function playYouTubeTrack(videoId) {
   pendingYtVideoId = videoId;
   if (ytPlayer && ytReady && typeof ytPlayer.loadVideoById === 'function') {
     try {
-      ytPlayer.setVolume(45);
+      ytPlayer.setVolume(22);
       ytPlayer.loadVideoById(videoId);
       ytPlayer.playVideo();
       pendingAutoplayUnlock = false;
@@ -216,7 +215,7 @@ function playYouTubeTrack(videoId) {
         onReady: () => {
           ytReady = true;
           try {
-            ytPlayer.setVolume(45);
+            ytPlayer.setVolume(22);
             if (isBgmPlaying && pendingYtVideoId) {
               ytPlayer.loadVideoById(pendingYtVideoId);
               ytPlayer.playVideo();
