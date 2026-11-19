@@ -125,8 +125,13 @@ body {
 
 .clow-magic-circle-real {
   mix-blend-mode: multiply;
-  filter: grayscale(1) contrast(1.5) brightness(1.15);
-  opacity: 0.14;
+  filter: grayscale(1) contrast(1.5) brightness(1.12);
+  opacity: 0.22;
+}
+@media (min-width: 768px) {
+  .clow-magic-circle-real {
+    opacity: 0.18;
+  }
 }
 
 .altar-card-center {
@@ -187,25 +192,36 @@ body {
 
 .vintage-frame {
   background:
-    radial-gradient(circle at 50% 0%, #FFF9E6 0%, var(--card-surface) 65%, #F2DFAC 100%);
+    radial-gradient(circle at 50% 0%, rgba(255, 249, 230, 0.82) 0%, rgba(251, 241, 212, 0.76) 65%, rgba(242, 223, 172, 0.82) 100%);
   border: 2px solid var(--terracotta-line);
   box-shadow:
-    inset 0 0 0 3px var(--card-surface),
+    inset 0 0 0 3px rgba(251, 241, 212, 0.82),
     inset 0 0 0 4.5px var(--brass-border),
-    inset 0 0 24px rgba(158, 102, 26, 0.14),
-    0 12px 28px -10px rgba(42, 22, 14, 0.28);
+    inset 0 0 24px rgba(158, 102, 26, 0.12),
+    0 12px 28px -10px rgba(42, 22, 14, 0.24);
   position: relative;
+}
+
+#reading-modal .vintage-frame,
+#draw-notice-modal .vintage-frame {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 249, 230, 0.96) 0%, rgba(251, 241, 212, 0.95) 65%, rgba(242, 223, 172, 0.96) 100%);
+}
+
+#header-frame {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 249, 230, 0.9) 0%, rgba(251, 241, 212, 0.86) 65%, rgba(242, 223, 172, 0.9) 100%);
 }
 
 .vintage-spread-card {
   background:
-    radial-gradient(circle at 50% 15%, #FFF8E3 0%, #F7E5B4 65%, #EBD08E 100%);
+    radial-gradient(circle at 50% 15%, rgba(255, 248, 227, 0.82) 0%, rgba(247, 229, 180, 0.76) 65%, rgba(235, 208, 142, 0.82) 100%);
   border: 2px solid var(--terracotta-line);
   box-shadow:
-    inset 0 0 0 3px #FBF1D4,
+    inset 0 0 0 3px rgba(251, 241, 212, 0.84),
     inset 0 0 0 4.5px var(--brass-border),
     inset 0 0 18px rgba(94, 44, 27, 0.1),
-    0 10px 22px -8px rgba(42, 22, 14, 0.24);
+    0 10px 22px -8px rgba(42, 22, 14, 0.22);
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.3s ease,
               border-color 0.25s ease;
@@ -241,11 +257,20 @@ body {
 }
 
 @keyframes pageTransitionFade {
-  0%   { opacity: 0; transform: translateY(6px); }
+  0%   { opacity: 0; transform: translateY(10px); }
+  18%  { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 .page-transition-fade {
-  animation: pageTransitionFade 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageTransitionFade 0.68s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modalFadeIn {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-fade-in {
+  animation: modalFadeIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .clow-aspect {
@@ -290,6 +315,26 @@ body {
   filter: drop-shadow(0 6px 14px rgba(42, 22, 14, 0.14));
 }
 
+.shuffle-layer-card .clow-frame,
+#cut-deck-touchzone .clow-frame,
+.draw-row-card .clow-frame,
+.revealed-board-card .clow-frame,
+.card-face .clow-frame {
+  filter: none;
+}
+
+.shuffle-layer-card img {
+  box-shadow: 0 1px 2px rgba(42, 22, 14, 0.16);
+}
+
+.shuffle-layer-card:first-child .clow-frame {
+  filter: drop-shadow(0 10px 14px rgba(42, 22, 14, 0.22));
+}
+
+#interactive-deck-touchzone {
+  filter: none;
+}
+
 .shuffle-layer-card {
   position: absolute;
   inset: 0;
@@ -308,13 +353,13 @@ body {
   0%   { transform: translate(-56px, var(--packet-y, 0px)) rotate(-5deg); }
   28%  { transform: translate(-62px, calc(var(--packet-y, 0px) - 10px)) rotate(-12deg); }
   68%  { transform: translate(-14px, -16px) rotate(-3deg); }
-  100% { transform: translate(0px, var(--rest-y, 0px)) rotate(0deg); }
+  100% { transform: translate(var(--rest-x, 0px), var(--rest-y, 0px)) rotate(var(--rest-rot, 0deg)); }
 }
 @keyframes humanRiffleRight {
   0%   { transform: translate(56px, var(--packet-y, 0px)) rotate(5deg); }
   28%  { transform: translate(62px, calc(var(--packet-y, 0px) - 10px)) rotate(12deg); }
   68%  { transform: translate(14px, -16px) rotate(3deg); }
-  100% { transform: translate(0px, var(--rest-y, 0px)) rotate(0deg); }
+  100% { transform: translate(var(--rest-x, 0px), var(--rest-y, 0px)) rotate(var(--rest-rot, 0deg)); }
 }
 .is-shuffling .riffle-left {
   animation: humanRiffleLeft 0.46s cubic-bezier(0.22, 0.85, 0.36, 1) var(--riffle-delay, 0ms) both;
@@ -345,10 +390,10 @@ body {
 }
 
 .draw-row-card {
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.22s ease,
-              opacity 0.25s ease;
-  will-change: transform;
+  transition: transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s ease,
+              opacity 0.44s ease;
+  will-change: transform, opacity;
   touch-action: manipulation;
 }
 @media (hover: hover) {
@@ -362,24 +407,28 @@ body {
   transform: translateY(-6px) scale(1.04);
   z-index: 60 !important;
 }
-.draw-row-card:disabled {
-  opacity: 0.16;
-  transform: translateY(4px) scale(0.94);
+.draw-row-card:disabled,
+.draw-row-card.is-picked {
+  opacity: 0 !important;
+  transform: translateY(-10px) scale(0.95) !important;
   pointer-events: none;
 }
 
 @keyframes fanDealCard {
   0% {
     opacity: 0;
-    transform: translateX(-28px) translateY(-10px) rotate(-8deg) scale(0.92);
+    transform: translateX(-20px);
+  }
+  45% {
+    opacity: 0.78;
   }
   100% {
     opacity: 1;
-    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    transform: translateX(0);
   }
 }
 .fan-deal-in {
-  animation: fanDealCard 0.34s cubic-bezier(0.22, 1, 0.36, 1) var(--deal-delay, 0ms) both;
+  animation: fanDealCard 0.56s cubic-bezier(0.22, 1, 0.36, 1) var(--deal-delay, 0ms) both;
 }
 
 @keyframes nextStepPulse {
@@ -464,13 +513,13 @@ body {
 
 .center-oracle-stage {
   background:
-    radial-gradient(circle at 50% 45%, #FCF3D9 0%, #EED69A 68%, #DFBE73 100%);
+    radial-gradient(circle at 50% 45%, rgba(252, 243, 217, 0.8) 0%, rgba(238, 214, 154, 0.75) 68%, rgba(223, 190, 115, 0.8) 100%);
   border: 2px solid #5E2C1B;
   box-shadow:
-    inset 0 0 0 4px #FBF1D4,
+    inset 0 0 0 4px rgba(251, 241, 212, 0.82),
     inset 0 0 0 6px #9E661A,
-    inset 0 0 42px rgba(79, 32, 49, 0.16),
-    0 20px 42px -12px rgba(42, 22, 14, 0.34);
+    inset 0 0 42px rgba(79, 32, 49, 0.14),
+    0 20px 42px -12px rgba(42, 22, 14, 0.28);
 }
 
 .active-card-spotlight {
@@ -480,12 +529,12 @@ body {
 }
 
 .revealed-board-card {
-  filter: drop-shadow(0 12px 20px rgba(42, 22, 14, 0.48)) drop-shadow(0 3px 6px rgba(79, 32, 49, 0.28));
+  filter: drop-shadow(0 3px 6px rgba(42, 22, 14, 0.08));
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
 }
 .revealed-board-card:hover {
   transform: translateY(-3px) scale(1.02);
-  filter: drop-shadow(0 16px 26px rgba(42, 22, 14, 0.56)) drop-shadow(0 4px 10px rgba(79, 32, 49, 0.35));
+  filter: drop-shadow(0 5px 10px rgba(42, 22, 14, 0.13));
 }
 
 .editorial-scroll::-webkit-scrollbar { width: 7px; }

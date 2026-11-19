@@ -10,9 +10,47 @@ import { BGM_TRACKS } from '../data/bgm.js';
 let audioCtx = null;
 const isSoundOn = true;
 
-let isBgmPlaying = false;
+let isBgmPlaying = true;
 let currentBgmTrackIdx = 0;
 let bgmFadeTimer = null;
+let pendingAutoplayUnlock = false;
+let unlockListenersAttached = false;
+
+const UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'click', 'keydown'];
+
+function detachAutoplayUnlockListeners() {
+  if (!unlockListenersAttached) return;
+  unlockListenersAttached = false;
+  UNLOCK_EVENTS.forEach((evt) => {
+    window.removeEventListener(evt, handleFirstUserGestureUnlock, true);
+  });
+}
+
+function handleFirstUserGestureUnlock(event) {
+  if (!isBgmPlaying || !pendingAutoplayUnlock) {
+    detachAutoplayUnlockListeners();
+    return;
+  }
+
+  // หากผู้ใช้กดปุ่มปิดเพลงเป็นคลิกแรก ไม่ต้องบังคับปลดล็อกเปิดเพลงทับ
+  if (event && event.target && typeof event.target.closest === 'function') {
+    if (event.target.closest('#btn-bgm-toggle')) {
+      return;
+    }
+  }
+
+  getAudioCtx();
+  startBgmPlayback({ isAutoAttempt: false });
+}
+
+function armAutoplayUnlockListeners() {
+  pendingAutoplayUnlock = true;
+  if (unlockListenersAttached) return;
+  unlockListenersAttached = true;
+  UNLOCK_EVENTS.forEach((evt) => {
+    window.addEventListener(evt, handleFirstUserGestureUnlock, { capture: true, passive: true });
+  });
+}
 
 function getAudioCtx() {
   if (!audioCtx) {
@@ -108,7 +146,13 @@ export function preloadAllBgmTracks() {
   });
 }
 
-export function startBgmPlayback() {
+export function initAutoBgm() {
+  isBgmPlaying = true;
+  updateBgmUI();
+  startBgmPlayback({ isAutoAttempt: true });
+}
+
+export function startBgmPlayback({ isAutoAttempt = false } = {}) {
   const track = BGM_TRACKS[currentBgmTrackIdx] || BGM_TRACKS[0];
   const player = getBgmPlayer();
   if (!player || !track || !track.url) {
@@ -119,15 +163,21 @@ export function startBgmPlayback() {
   isBgmPlaying = true;
   updateBgmUI();
 
+  const desiredTrackKey = String(track.id);
+  const currentTrackKey = player.getAttribute('data-current-track-id');
   const effectiveSrc = bgmBlobUrlCache[track.id] || track.url;
-  if (player.getAttribute('data-current-src') !== effectiveSrc) {
+
+  if (currentTrackKey !== desiredTrackKey || !player.getAttribute('data-current-src')) {
     player.pause();
     player.src = effectiveSrc;
     player.setAttribute('data-current-src', effectiveSrc);
+    player.setAttribute('data-current-track-id', desiredTrackKey);
     player.load();
   }
 
   player.onerror = () => {
+    pendingAutoplayUnlock = false;
+    detachAutoplayUnlockListeners();
     isBgmPlaying = false;
     updateBgmUI('รอเพิ่มไฟล์เพลง MP3');
   };
@@ -136,18 +186,28 @@ export function startBgmPlayback() {
   if (playPromise && typeof playPromise.then === 'function') {
     playPromise
       .then(() => {
+        pendingAutoplayUnlock = false;
+        detachAutoplayUnlockListeners();
         fadeInAudioVolume(player);
         if (isBgmPlaying) updateBgmUI();
       })
       .catch(() => {
-        isBgmPlaying = false;
-        updateBgmUI();
+        // เบราว์เซอร์ (เช่น iOS Safari / Chrome) บล็อก Autoplay ก่อนมี interaction
+        // คงสถานะเปิดเพลงไว้ แล้วปลดล็อกเล่นอัตโนมัติทันทีเมื่อผู้ใช้แตะหน้าจอครั้งแรก
+        if (isBgmPlaying) {
+          armAutoplayUnlockListeners();
+          updateBgmUI();
+        } else if (!isAutoAttempt) {
+          updateBgmUI();
+        }
       });
   }
 }
 
 export function stopBgmPlayback() {
   isBgmPlaying = false;
+  pendingAutoplayUnlock = false;
+  detachAutoplayUnlockListeners();
   if (bgmFadeTimer) clearInterval(bgmFadeTimer);
   const player = getBgmPlayer();
   if (player) player.pause();
@@ -156,20 +216,20 @@ export function stopBgmPlayback() {
 
 export function toggleBgm() {
   if (isBgmPlaying) stopBgmPlayback();
-  else startBgmPlayback();
+  else startBgmPlayback({ isAutoAttempt: false });
 }
 
 export function prevBgmTrack() {
   if (BGM_TRACKS.length === 0) return;
   currentBgmTrackIdx = (currentBgmTrackIdx - 1 + BGM_TRACKS.length) % BGM_TRACKS.length;
-  if (isBgmPlaying) startBgmPlayback();
+  if (isBgmPlaying) startBgmPlayback({ isAutoAttempt: false });
   else updateBgmUI();
 }
 
 export function nextBgmTrack() {
   if (BGM_TRACKS.length === 0) return;
   currentBgmTrackIdx = (currentBgmTrackIdx + 1) % BGM_TRACKS.length;
-  if (isBgmPlaying) startBgmPlayback();
+  if (isBgmPlaying) startBgmPlayback({ isAutoAttempt: false });
   else updateBgmUI();
 }
 
@@ -235,13 +295,13 @@ export function playCardFlipSound() {
   } catch (_) {}
 }
 
-export function playRapidRiffleSound(cardCount = 14) {
+export function playRapidRiffleSound(cardCount = 14, stepSec = 0.032) {
   if (!isSoundOn) return;
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
     for (let i = 0; i < cardCount; i++) {
-      const startTime = ctx.currentTime + i * 0.032;
+      const startTime = ctx.currentTime + i * stepSec;
       const bufferSize = Math.floor(ctx.sampleRate * 0.022);
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
