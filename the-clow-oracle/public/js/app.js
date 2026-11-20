@@ -1700,7 +1700,7 @@ function syncReadingModalOffset(modal) {
   modal.style.paddingTop = `${headerBottom + (isMobile ? 10 : 6)}px`;
   const scrollBox = modal.querySelector('.editorial-scroll');
   if (scrollBox) {
-    scrollBox.style.maxHeight = `calc(100dvh - ${headerBottom + (isMobile ? 76 : 24)}px)`;
+    scrollBox.style.maxHeight = `calc(100dvh - ${headerBottom + (isMobile ? 22 : 18)}px)`;
     if (!scrollBox.dataset.boundScrollNav) {
       scrollBox.dataset.boundScrollNav = '1';
       scrollBox.addEventListener('scroll', updateModalScrollButtons, { passive: true });
