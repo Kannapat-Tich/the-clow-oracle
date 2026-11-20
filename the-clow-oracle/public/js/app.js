@@ -18,7 +18,7 @@ import {
   playRapidRiffleSound
 } from './audio.js';
 import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js';
-import { trackEvent } from './analytics.js';
+import { trackEvent, hasAnalyticsConsent, grantAnalyticsConsent } from './analytics.js';
 import {
   applyLanguage,
   toggleLanguage as i18nToggleLanguage,
@@ -463,8 +463,10 @@ function enterRitualShuffleStage() {
   if (!activeSpread) return;
   clearPendingDrawNotice();
 
+  clearCompatibilityTimer();
   ritualPhase = 'shuffle';
   shuffleCount = 0;
+  spreadCanvasZoom = 1;
   placedSlots = [];
   focusedBoardIdx = -1;
   isAnimatingRitual = false;
@@ -606,8 +608,406 @@ function performDeckCut() {
   setTimeout(() => {
     cutZone.classList.remove('is-cutting');
     isAnimatingRitual = false;
-    enterFanDrawPhase();
+    if (activeSpread && activeSpread.layoutType === 'compatibility52') {
+      enterCompatibilityReadingStage();
+    } else {
+      enterFanDrawPhase();
+    }
   }, 1350);
+}
+
+let compatCards = [];
+let compatScanIndex = 0;
+let compatEliminatedPairs = 0;
+let compatTimer = null;
+let compatFinished = false;
+
+function clearCompatibilityTimer() {
+  if (compatTimer) {
+    clearTimeout(compatTimer);
+    compatTimer = null;
+  }
+}
+
+function getCardSuitGroup(card) {
+  const el = String(card?.elementThai || '');
+  if (el.startsWith('โพดำ')) return { key: 'spades', label: 'โพดำ', color: '#4F2031' };
+  if (el.startsWith('โพแดง')) return { key: 'hearts', label: 'โพแดง', color: '#B45309' };
+  if (el.startsWith('ดอกจิก')) return { key: 'clubs', label: 'ดอกจิก', color: '#1E40AF' };
+  return { key: 'diamonds', label: 'ข้าวหลามตัด', color: '#166534' };
+}
+
+function getCompatibilityTier(remainingCount) {
+  if (remainingCount <= 10) {
+    return {
+      title: 'เข้ากันได้ดีมาก',
+      range: '0 – 10 ใบ',
+      desc: 'ความเข้ากันได้อยู่ในระดับยอดเยี่ยม ความสัมพันธ์ราบรื่นและเกื้อหนุนกันอย่างเป็นธรรมชาติ',
+      badgeCls: 'text-[#166534] bg-[#DCFCE7] border-[#86EFAC]'
+    };
+  }
+  if (remainingCount <= 20) {
+    return {
+      title: 'เข้ากันได้ค่อนข้างดี',
+      range: '11 – 20 ใบ',
+      desc: 'มีพลังบวกและความเข้าใจที่ดีต่อกัน หากเปิดใจสื่อสารจะยิ่งสนิทและมั่นคงมากขึ้น',
+      badgeCls: 'text-[#1E40AF] bg-[#DBEAFE] border-[#93C5FD]'
+    };
+  }
+  if (remainingCount <= 30) {
+    return {
+      title: 'เข้ากันได้ระดับปานกลาง',
+      range: '21 – 30 ใบ',
+      desc: 'ความสัมพันธ์อยู่ในเกณฑ์ปกติ มีทั้งจุดที่ลงตัวและจุดที่ต้องค่อยๆ ปรับจูนเข้าหากัน',
+      badgeCls: 'text-[#854D0E] bg-[#FEF9C3] border-[#FDE047]'
+    };
+  }
+  if (remainingCount <= 40) {
+    return {
+      title: 'เข้ากันได้ค่อนข้างน้อย',
+      range: '31 – 40 ใบ',
+      desc: 'อาจมีมุมมองหรือจังหวะชีวิตที่ต่างกันบ้าง ควรใช้ความใจเย็นและหลีกเลี่ยงการด่วนตัดสิน',
+      badgeCls: 'text-[#9A3412] bg-[#FFEDD5] border-[#FDBA74]'
+    };
+  }
+  return {
+    title: 'ไม่ค่อยเข้ากันนัก',
+    range: '41 – 50 ใบ',
+    desc: 'มีแรงต้านหรือความต่างค่อนข้างสูง ต้องอาศัยความอดทน ความยืดหยุ่น และการสื่อสารที่นุ่มนวลเป็นพิเศษ',
+    badgeCls: 'text-[#991B1B] bg-[#FEE2E2] border-[#FCA5A5]'
+  };
+}
+
+function findAdjacentSuitPairs(cards) {
+  const matchedIndices = new Set();
+  for (let i = 0; i < cards.length - 1; i++) {
+    if (getCardSuitGroup(cards[i]).key === getCardSuitGroup(cards[i + 1]).key) {
+      matchedIndices.add(i);
+      matchedIndices.add(i + 1);
+      i += 1;
+    }
+  }
+  return matchedIndices;
+}
+
+function updateCompatibilityHeaderUI(scanIndex = -1) {
+  const boardHint = document.getElementById('board-stage-hint');
+  const statusPill = document.getElementById('compat-scan-pill');
+  const remainEl = document.getElementById('compat-remain-count');
+  const pairsEl = document.getElementById('compat-pairs-count');
+  const actionWrap = document.getElementById('compat-action-btn-wrap');
+  const curtain = document.getElementById('compat-curtain-overlay');
+
+  const remain = compatCards.length;
+  const tier = getCompatibilityTier(remain);
+  const currentCardNo = scanIndex >= 0 && scanIndex < remain ? scanIndex + 1 : remain;
+
+  if (boardHint) {
+    boardHint.textContent = compatFinished
+      ? `คัดไพ่เสร็จสมบูรณ์ · เหลือไพ่ ${remain} ใบ (${tier.title})`
+      : 'กำลังคัดไพ่ออก...';
+  }
+  if (statusPill) {
+    if (!compatFinished && remain > 0) {
+      statusPill.textContent = 'กำลังคัดไพ่ออก...';
+      statusPill.classList.remove('hidden');
+    } else {
+      statusPill.classList.add('hidden');
+    }
+  }
+  if (remainEl) remainEl.textContent = String(remain);
+  if (pairsEl) pairsEl.textContent = String(compatEliminatedPairs);
+  if (curtain) {
+    curtain.classList.toggle('opacity-0', compatFinished);
+    curtain.classList.toggle('pointer-events-none', compatFinished);
+  }
+  if (actionWrap && compatFinished) {
+    actionWrap.innerHTML = `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">✦ ดูบทสรุปความเข้ากันได้</button>`;
+  }
+}
+
+function renderCompatibilityCanvas(scanIndex = -1, matchedPairIndices = new Set()) {
+  const wrapper = document.getElementById('board-slots-wrapper');
+  const guideText = document.getElementById('board-ritual-guide-text');
+  if (!wrapper) return;
+
+  if (guideText && guideText.parentElement) {
+    guideText.parentElement.classList.add('hidden');
+  }
+
+  const remain = compatCards.length;
+  const cardsHtml = compatCards.length
+    ? compatCards
+        .map((card, idx) => {
+          const isLeftmost = compatFinished && idx === 0;
+          const isRightmost = compatFinished && idx === compatCards.length - 1;
+          const ringCls = isLeftmost || isRightmost ? 'ring-2 ring-[#4F2031] z-20 shadow-md' : 'hover:z-20';
+          return `
+            <div data-compat-card="${card.id}"
+                 style="transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.36s ease, width 0.36s ease, margin 0.36s ease;"
+                 class="compat-card-item relative -ml-3.5 sm:-ml-4 first:ml-0 w-12 sm:w-16 md:w-[70px] shrink-0 rounded-md ${ringCls}"
+                 title="${card.name} — ${card.thaiName} (${getCardSuitGroup(card).label})">
+              ${buildMinimalCardFrontHTML(card)}
+              ${
+                isLeftmost
+                  ? '<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#4F2031] text-[#FFF7DE] text-[8px] font-fahkwang shadow">ซ้ายสุด</span>'
+                  : isRightmost
+                    ? '<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#8A5414] text-[#FFF7DE] text-[8px] font-fahkwang shadow">ขวาสุด</span>'
+                    : ''
+              }
+            </div>
+          `;
+        })
+        .join('')
+    : `<div class="py-6 text-center font-charm text-lg text-[#4F2031]">✦ ตัดคู่ไพ่ครบทั้ง 52 ใบ ไม่มีไพ่เหลือ — เข้ากันได้อย่างสมบูรณ์แบบ! ✦</div>`;
+
+  wrapper.innerHTML = `
+    <div class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-[#FCF4DC]/85 border border-[#8A5414]/40 rounded-lg px-3 py-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs font-fahkwang text-[#2A160E]">
+          <span id="compat-scan-pill" class="${!compatFinished ? '' : 'hidden'} px-2 py-0.5 rounded-full bg-[#FEF08A] border border-[#CA8A04] text-[#713F12]">กำลังคัดไพ่ออก...</span>
+          <span>เหลือไพ่ <strong id="compat-remain-count" class="text-[#4F2031]">${remain}</strong> / 52 ใบ</span>
+          <span class="text-[#523020]">(คัดออกแล้ว <span id="compat-pairs-count">${compatEliminatedPairs}</span> คู่)</span>
+        </div>
+        <div id="compat-action-btn-wrap">
+          ${
+            compatFinished
+              ? `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">✦ ดูบทสรุปความเข้ากันได้</button>`
+              : `<button onclick="skipCompatibilityAnimation()" class="btn-vintage-secondary px-3 py-1 rounded-md text-[11px] font-fahkwang">ข้ามไปดูผลลัพธ์ทันที →</button>`
+          }
+        </div>
+      </div>
+
+      <div class="relative w-full rounded-xl border border-[#8A5414]/30 bg-[#FBF1D4]/25 px-4 sm:px-6 py-4 overflow-hidden">
+        <div id="compat-curtain-overlay"
+             class="${compatFinished ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} absolute inset-0 z-40 bg-[#FBF1D4]/30 backdrop-blur-[0.5px] rounded-xl transition-opacity duration-500 flex flex-col items-center justify-center gap-2.5">
+          <div class="px-4 py-1.5 rounded-full bg-[#FCF4DC]/95 border border-[#8A5414]/60 shadow-md text-xs sm:text-sm font-fahkwang text-[#4F2031] animate-pulse">
+            ✦ กำลังคัดไพ่ออก...
+          </div>
+          <button onclick="skipCompatibilityAnimation()"
+                  class="btn-vintage-secondary px-3.5 py-1.5 rounded-md text-xs font-fahkwang shadow-md">
+            ข้ามไปดูผลลัพธ์ทันที →
+          </button>
+        </div>
+        <div id="compat-cards-row" class="flex flex-wrap items-center justify-center gap-y-4 pl-3.5 sm:pl-4">
+          ${cardsHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  updateCompatibilityHeaderUI(scanIndex);
+}
+
+function highlightCompatCardNodes(scanIndex, matchedPairIndices = new Set()) {
+  const row = document.getElementById('compat-cards-row');
+  if (!row) return;
+  const nodes = Array.from(row.querySelectorAll('.compat-card-item'));
+  nodes.forEach((node, idx) => {
+    node.classList.remove('ring-2', 'ring-[#FACC15]', 'bg-[#FEF08A]/40', '-translate-y-2.5', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-lg', 'shadow-md');
+    if (matchedPairIndices.has(idx)) {
+      node.classList.add('ring-2', 'ring-[#FACC15]', 'bg-[#FEF08A]/40', '-translate-y-2.5', 'scale-105', 'z-30', 'shadow-lg');
+    } else if (idx === scanIndex) {
+      node.classList.add('ring-2', 'ring-[#FACC15]', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-md');
+    }
+  });
+  updateCompatibilityHeaderUI(scanIndex);
+}
+
+function finalizeCompatibilityReading() {
+  clearCompatibilityTimer();
+  compatFinished = true;
+  placedSlots = [];
+  if (compatCards.length > 0) {
+    placedSlots.push({ posIndex: 1, card: compatCards[0], isRevealed: true });
+    if (compatCards.length > 1) {
+      placedSlots.push({ posIndex: 2, card: compatCards[compatCards.length - 1], isRevealed: true });
+    }
+  }
+  renderCompatibilityCanvas();
+  const summaryCta = document.getElementById('board-summary-cta');
+  if (summaryCta) summaryCta.classList.remove('hidden');
+  const revealAllFooter = document.getElementById('board-reveal-all-footer');
+  if (revealAllFooter) revealAllFooter.classList.add('hidden');
+  openCompatibilitySummaryModal();
+}
+
+function openBoardSummaryModal() {
+  if (activeSpread && activeSpread.layoutType === 'compatibility52') {
+    openCompatibilitySummaryModal();
+  } else {
+    openFullReadingModal();
+  }
+}
+
+function runCompatibilityStep() {
+  if (compatFinished) return;
+
+  if (compatCards.length < 2 || compatScanIndex >= compatCards.length - 1) {
+    finalizeCompatibilityReading();
+    return;
+  }
+
+  const i = compatScanIndex;
+  const isPair = getCardSuitGroup(compatCards[i]).key === getCardSuitGroup(compatCards[i + 1]).key;
+
+  if (isPair) {
+    highlightCompatCardNodes(i, new Set([i, i + 1]));
+    playSoftPaperRustle();
+    compatTimer = setTimeout(() => {
+      const row = document.getElementById('compat-cards-row');
+      const nodes = row ? Array.from(row.querySelectorAll('.compat-card-item')) : [];
+      const n1 = nodes[i];
+      const n2 = nodes[i + 1];
+      // แอนิเมชันค่อยๆ ลอยขึ้น ย่อตัว และจางหายแบบลื่นไหลก่อนลบออก
+      [n1, n2].forEach((n) => {
+        if (!n) return;
+        n.style.opacity = '0';
+        n.style.transform = 'translateY(-18px) scale(0.75)';
+        n.style.width = '0px';
+        n.style.marginLeft = '0px';
+        n.style.overflow = 'hidden';
+      });
+      compatTimer = setTimeout(() => {
+        if (n1) n1.remove();
+        if (n2) n2.remove();
+        compatCards.splice(i, 2);
+        compatEliminatedPairs += 1;
+        compatScanIndex = Math.max(0, i - 1);
+        highlightCompatCardNodes(compatScanIndex);
+        compatTimer = setTimeout(runCompatibilityStep, 260);
+      }, 380);
+    }, 420);
+  } else {
+    highlightCompatCardNodes(i);
+    compatScanIndex = i + 1;
+    compatTimer = setTimeout(runCompatibilityStep, 220);
+  }
+}
+
+function skipCompatibilityAnimation() {
+  clearCompatibilityTimer();
+  while (true) {
+    const matched = findAdjacentSuitPairs(compatCards);
+    if (matched.size === 0) break;
+    compatEliminatedPairs += matched.size / 2;
+    compatCards = compatCards.filter((_, idx) => !matched.has(idx));
+  }
+  finalizeCompatibilityReading();
+}
+
+function enterCompatibilityReadingStage() {
+  clearCompatibilityTimer();
+  clearPendingDrawNotice();
+  ritualPhase = 'draw';
+  compatCards = [...shuffledDeck];
+  compatScanIndex = 0;
+  compatEliminatedPairs = 0;
+  compatFinished = false;
+  updateRitualPhaseBadges('draw');
+
+  document.getElementById('deck-stage-panel').classList.add('hidden');
+  const boardArea = document.getElementById('board-area');
+  boardArea.classList.remove('hidden');
+  const controlsBar = document.getElementById('board-canvas-controls');
+  if (controlsBar) controlsBar.classList.add('hidden');
+  const summaryCta = document.getElementById('board-summary-cta');
+  if (summaryCta) summaryCta.classList.add('hidden');
+
+  renderCompatibilityCanvas(0);
+  triggerPageFade(boardArea);
+  scrollToTopSmooth();
+  compatTimer = setTimeout(runCompatibilityStep, 550);
+}
+
+function openCompatibilitySummaryModal() {
+  if (!activeSpread) return;
+  const body = document.getElementById('modal-reading-body');
+  const remain = compatCards.length;
+  const tier = getCompatibilityTier(remain);
+  const leftCard = compatCards.length > 0 ? compatCards[0] : null;
+  const rightCard = compatCards.length > 1 ? compatCards[compatCards.length - 1] : leftCard;
+
+  const keyCardsHtml = leftCard
+    ? `
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
+          <p class="font-fahkwang text-[11px] text-[#4F2031]">✦ ไพ่ใบซ้ายสุด · สาเหตุหรืออุปสรรค</p>
+          <div class="flex items-start gap-3">
+            <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
+            <div class="space-y-1 text-left">
+              <p class="font-cinzel text-xs font-bold text-[#2A160E]">${leftCard.name}</p>
+              <p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>
+              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${leftCard.meaning}</p>
+            </div>
+          </div>
+        </div>
+        ${
+          rightCard
+            ? `
+        <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
+          <p class="font-fahkwang text-[11px] text-[#8A5414]">✦ ไพ่ใบขวาสุด · คำแนะนำการปรับตัว</p>
+          <div class="flex items-start gap-3">
+            <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
+            <div class="space-y-1 text-left">
+              <p class="font-cinzel text-xs font-bold text-[#2A160E]">${rightCard.name}</p>
+              <p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>
+              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${rightCard.warning}</p>
+            </div>
+          </div>
+        </div>`
+            : ''
+        }
+      </div>
+    `
+    : `<div class="bg-[#DCFCE7]/70 border border-[#86EFAC] rounded-lg p-3.5 text-center font-pridi text-sm text-[#166534]">ตัดคู่ไพ่ครบทุกใบ ไม่มีอุปสรรคหลงเหลือ ความสัมพันธ์ราบรื่นและสอดคล้องกันอย่างยอดเยี่ยม</div>`;
+
+  body.innerHTML = `
+    <div class="space-y-4">
+      <div class="text-center space-y-1 border-b border-[#8A5414]/45 pb-3">
+        <span class="font-cinzel text-xs tracking-[0.18em] uppercase text-[#4F2031]">${activeSpread.engTitle}</span>
+        <h3 class="font-charm text-2xl sm:text-3xl text-[#2A160E] leading-snug">
+          <span class="block">บทสรุปคำพยากรณ์</span>
+          <span class="block text-xl sm:text-2xl text-[#4F2031]">${activeSpread.name}</span>
+        </h3>
+      </div>
+
+      <div class="rounded-xl border p-4 text-center space-y-1.5 ${tier.badgeCls}">
+        <p class="font-fahkwang text-xs">เหลือไพ่ทั้งหมด <strong>${remain} ใบ</strong> (ช่วง ${tier.range})</p>
+        <p class="font-charm text-2xl font-bold">${tier.title}</p>
+        <p class="font-pridi text-xs sm:text-sm leading-relaxed">${tier.desc}</p>
+      </div>
+
+      ${keyCardsHtml}
+    </div>
+  `;
+
+  const fullFooterBar = document.getElementById('reading-modal-footer-bar');
+  const fullFooterActions = document.getElementById('reading-modal-footer-actions');
+  if (fullFooterBar && fullFooterActions) {
+    fullFooterBar.classList.remove('hidden');
+    fullFooterActions.innerHTML = `
+      <div class="flex flex-col items-end gap-2">
+        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+          กลับสู่แท่นพยากรณ์
+        </button>
+        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">
+          การทำนายอื่น ๆ
+        </button>
+      </div>
+    `;
+  }
+
+  const modal = document.getElementById('reading-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.classList.add('reading-modal-open');
+  syncReadingModalOffset(modal);
+  const scrollBox = modal.querySelector('.editorial-scroll');
+  if (scrollBox) scrollBox.scrollTop = 0;
+  playSoftPaperRustle();
+
+  trackEvent('summary_view', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name, remaining: remain });
 }
 
 function initHeroCardShowcase() {
@@ -694,6 +1094,7 @@ function initSpreadNavigation() {
 }
 
 function resetToHome() {
+  clearCompatibilityTimer();
   closeReadingModal();
   clearPendingDrawNotice();
   activeSpread = null;
@@ -736,6 +1137,35 @@ function selectSpread(spreadId) {
 
   triggerPageFade(tableScreen);
   resetCurrentSpreadSession();
+  if (activeSpread.ritualNoticeBody) {
+    openRitualFocusModal(activeSpread);
+  }
+}
+
+function openRitualFocusModal(spread) {
+  const modal = document.getElementById('ritual-focus-modal');
+  const titleEl = document.getElementById('ritual-focus-title');
+  const bodyEl = document.getElementById('ritual-focus-body');
+  const tipEl = document.getElementById('ritual-focus-tip');
+  if (!modal || !titleEl || !bodyEl || !tipEl) return;
+
+  titleEl.textContent = spread.ritualNoticeTitle || 'ตั้งจิตก่อนเริ่มทำนาย';
+  bodyEl.innerHTML = spread.ritualNoticeBody || '';
+  if (spread.ritualNoticeTip) {
+    tipEl.textContent = spread.ritualNoticeTip;
+    tipEl.classList.remove('hidden');
+  } else {
+    tipEl.classList.add('hidden');
+  }
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeRitualFocusModal() {
+  const modal = document.getElementById('ritual-focus-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 }
 
 function handleDeckStackInteraction() {
@@ -1105,21 +1535,110 @@ function updateTableProgress() {
       if (fullBtn) fullBtn.classList.remove('hidden');
       if (revealAllFooter) revealAllFooter.classList.add('hidden');
       if (summaryCta) {
-        if (activeSpread.card_count > 1) summaryCta.classList.remove('hidden');
-        else summaryCta.classList.add('hidden');
+        summaryCta.classList.remove('hidden');
       }
     }
   }
   updateQuestNavArrow();
 }
 
+let spreadCanvasZoom = 1;
+
+function applySpreadCanvasZoom() {
+  const stage = document.getElementById('board-canvas-stage');
+  const sizer = document.getElementById('board-canvas-sizer');
+  const label = document.getElementById('board-zoom-label');
+  if (label) {
+    label.textContent = `${Math.round(spreadCanvasZoom * 100)}%`;
+  }
+  if (!stage) return;
+  stage.style.transform = `scale(${spreadCanvasZoom})`;
+  stage.style.transformOrigin = 'top left';
+  if (sizer) {
+    const baseW = stage.offsetWidth || 0;
+    const baseH = stage.offsetHeight || 0;
+    if (baseW && baseH) {
+      sizer.style.width = `${Math.ceil(baseW * spreadCanvasZoom)}px`;
+      sizer.style.height = `${Math.ceil(baseH * spreadCanvasZoom)}px`;
+    }
+  }
+  requestAnimationFrame(updateQuestNavArrow);
+}
+
+function adjustSpreadZoom(delta) {
+  spreadCanvasZoom = Math.min(1.5, Math.max(0.6, Math.round((spreadCanvasZoom + delta) * 100) / 100));
+  applySpreadCanvasZoom();
+}
+
+function resetSpreadZoom() {
+  spreadCanvasZoom = 1;
+  applySpreadCanvasZoom();
+  const vp = document.getElementById('board-canvas-viewport');
+  if (vp) vp.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+}
+
+function panSpreadCanvas(direction) {
+  const vp = document.getElementById('board-canvas-viewport');
+  if (!vp) return;
+  const step = Math.max(140, Math.round(vp.clientWidth * 0.55));
+  vp.scrollBy({ left: direction * step, behavior: 'smooth' });
+}
+
+function bindBoardCanvasInteractions() {
+  const vp = document.getElementById('board-canvas-viewport');
+  if (!vp || vp.dataset.boundCanvas) return;
+  vp.dataset.boundCanvas = '1';
+  vp.addEventListener('scroll', updateQuestNavArrow, { passive: true });
+
+  // Pinch-to-zoom เฉพาะภายในแคนวาสแท่นวางไพ่
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+  vp.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchStartDist = Math.hypot(dx, dy);
+        pinchStartZoom = spreadCanvasZoom;
+      }
+    },
+    { passive: true }
+  );
+  vp.addEventListener(
+    'touchmove',
+    (e) => {
+      if (e.touches.length === 2 && pinchStartDist > 0) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const nextZoom = pinchStartZoom * (dist / pinchStartDist);
+        spreadCanvasZoom = Math.min(1.5, Math.max(0.6, Math.round(nextZoom * 100) / 100));
+        applySpreadCanvasZoom();
+      }
+    },
+    { passive: false }
+  );
+  vp.addEventListener(
+    'touchend',
+    () => {
+      pinchStartDist = 0;
+    },
+    { passive: true }
+  );
+}
+
 function updateQuestNavArrow() {
   const arrowBtn = document.getElementById('quest-nav-arrow');
   const arrowText = document.getElementById('quest-nav-arrow-text');
+  const arrowIcon = document.getElementById('quest-nav-arrow-icon');
   if (!arrowBtn || !arrowText) return;
 
   const isAllPlaced = activeSpread && ritualPhase === 'draw' && placedSlots.length >= activeSpread.card_count;
-  const unrevealed = isAllPlaced ? placedSlots.filter((s) => !s.isRevealed) : [];
+  const unrevealed = isAllPlaced
+    ? placedSlots.filter((s) => !s.isRevealed).sort((a, b) => a.posIndex - b.posIndex)
+    : [];
 
   if (!isAllPlaced || unrevealed.length === 0) {
     arrowBtn.classList.add('hidden');
@@ -1133,63 +1652,91 @@ function updateQuestNavArrow() {
   }
 
   const rect = nextTarget.getBoundingClientRect();
-  const nextPos = unrevealed[0].posIndex;
-  const isAbove = rect.top < 72;
-  const isBelow = rect.bottom > window.innerHeight - 16;
+  const vp = document.getElementById('board-canvas-viewport');
+  const vpRect = vp ? vp.getBoundingClientRect() : null;
 
-  if (isAbove) {
-    arrowText.textContent = `↑ แตะเปิดไพ่ลำดับที่ ${nextPos}`;
-    arrowBtn.classList.remove('hidden');
-  } else if (isBelow) {
-    arrowText.textContent = `↓ แตะเปิดไพ่ลำดับที่ ${nextPos}`;
-    arrowBtn.classList.remove('hidden');
-  } else {
+  const minTop = Math.max(72, vpRect ? vpRect.top : 72);
+  const maxBottom = Math.min(window.innerHeight - 16, vpRect ? vpRect.bottom : window.innerHeight - 16);
+  const minLeft = Math.max(8, vpRect ? vpRect.left : 8);
+  const maxRight = Math.min(window.innerWidth - 8, vpRect ? vpRect.right : window.innerWidth - 8);
+
+  const isOut =
+    rect.top < minTop || rect.bottom > maxBottom || rect.left < minLeft || rect.right > maxRight;
+
+  if (!isOut) {
     arrowBtn.classList.add('hidden');
+    return;
   }
+
+  const nextPos = unrevealed[0].posIndex;
+  const targetCx = rect.left + rect.width / 2;
+  const targetCy = rect.top + rect.height / 2;
+  const viewCx = (minLeft + maxRight) / 2;
+  const viewCy = (minTop + maxBottom) / 2;
+  const angleDeg = Math.round((Math.atan2(targetCy - viewCy, targetCx - viewCx) * 180) / Math.PI);
+
+  if (arrowIcon) {
+    arrowIcon.style.transform = `rotate(${angleDeg}deg)`;
+  }
+  arrowText.textContent = `แตะเปิดไพ่ลำดับที่ ${nextPos}`;
+  arrowBtn.classList.remove('hidden');
 }
 
 function scrollToNextQuestCard() {
   const nextTarget = document.querySelector('.next-in-sequence-ring');
   if (nextTarget) {
-    nextTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    nextTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
   }
 }
 
 function buildSlotHTML(pos) {
   const placed = placedSlots.find((s) => s.posIndex === pos.index);
   const isAllPlaced = placedSlots.length >= activeSpread.card_count;
-  const firstUnrevealed = placedSlots.find((s) => !s.isRevealed);
+  const firstUnrevealed = placedSlots
+    .filter((s) => !s.isRevealed)
+    .sort((a, b) => a.posIndex - b.posIndex)[0];
   const isNextToFlip =
     isAllPlaced && placed && !placed.isRevealed && firstUnrevealed && firstUnrevealed.posIndex === pos.index;
   const isJustFocused = !isAllPlaced && placed && focusedBoardIdx === pos.index;
 
-  const cardSizeCls = activeSpread.layoutType === 'single' ? 'w-full max-w-[210px]' : 'w-full max-w-[144px]';
+  const isCompactBoard = activeSpread.layoutType === 'general10' || activeSpread.layoutType === 'romance7';
+  const cardSizeCls =
+    activeSpread.layoutType === 'single'
+      ? 'w-full max-w-[210px]'
+      : isCompactBoard
+        ? 'w-full max-w-[112px]'
+        : 'w-full max-w-[144px]';
+  const boxPadCls = isCompactBoard ? 'p-1 sm:p-1.5' : 'p-1.5 sm:p-2.5';
+  const headerMinH = isCompactBoard ? 'min-h-[28px] sm:min-h-[34px] px-1 py-0.5 mb-1' : 'min-h-[36px] sm:min-h-[42px] px-1.5 sm:px-2 py-0.5 mb-1.5';
+  const titleTextCls = isCompactBoard ? 'text-[7.5px] sm:text-[9.5px]' : 'text-[8.5px] sm:text-[11px]';
 
   const slotHeader = `
-    <div class="inline-flex flex-wrap items-center justify-center gap-1 px-1.5 sm:px-2 py-0.5 mb-1.5 rounded-lg bg-[#FCF4DC]/40 border border-[#8A5414]/20 opacity-70 w-full min-h-[36px] sm:min-h-[42px] text-center">
-      <span class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#8A5414]/15 text-[#523020]/75 font-cinzel text-[8px] sm:text-[9px] font-medium flex items-center justify-center shrink-0 leading-none">
+    <div class="inline-flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 ${headerMinH} rounded-lg bg-[#FCF4DC]/40 border border-[#8A5414]/20 opacity-80 w-full text-center">
+      <span class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#8A5414]/20 text-[#523020]/85 font-cinzel text-[8px] sm:text-[9px] font-semibold flex items-center justify-center shrink-0 leading-none">
         ${pos.index}
       </span>
-      <span class="font-fahkwang text-[8.5px] sm:text-[11px] text-[#523020]/65 leading-tight break-words">
+      <span class="font-fahkwang ${titleTextCls} text-[#523020]/75 leading-tight break-words">
         ${pos.title}
       </span>
     </div>
   `;
 
+  const slotHeightCls = isCompactBoard ? 'h-auto' : 'h-full';
+
   if (!placed) {
     const isCurrentTarget = placedSlots.length + 1 === pos.index;
     return `
-      <div class="flex flex-col items-center justify-between w-full h-full min-w-0 p-1.5 sm:p-2.5 rounded-xl bg-[#FBF1D4]/30 border border-[#8A5414]/25">
+      <div class="flex flex-col items-center justify-between w-full ${slotHeightCls} min-w-0 ${boxPadCls} rounded-xl bg-[#FBF1D4]/30 border border-[#8A5414]/25">
         ${slotHeader}
         <div class="${cardSizeCls} clow-aspect rounded-[10px] border-2 border-dashed ${
           isCurrentTarget ? 'border-[#4A1F12] bg-[#F8DF94]/65 shadow-inner' : 'border-[#8A5414]/45 bg-[#FCF4DC]/65'
         } flex flex-col items-center justify-center p-1 sm:p-2 text-center transition-all">
           <span class="font-cinzel text-xs sm:text-sm font-bold text-[#4F2031]/80">${pos.index}</span>
-          <span class="font-pridi text-[8.5px] sm:text-[10px] text-[#523020]/85 mt-1 leading-tight">
-            ${isCurrentTarget ? 'รอวางไพ่' : 'ตำแหน่งว่าง'}
+          <span class="font-pridi text-[8px] sm:text-[9.5px] text-[#523020]/85 mt-0.5 leading-tight">
+            ${isCurrentTarget ? 'รอวางไพ่' : 'ว่าง'}
           </span>
         </div>
-        <span class="mt-1.5 min-h-[24px] sm:min-h-[28px]"></span>
+        <span class="mt-1 min-h-[18px] sm:min-h-[22px]"></span>
       </div>
     `;
   }
@@ -1203,7 +1750,7 @@ function buildSlotHTML(pos) {
         : '';
 
   return `
-    <div class="flex flex-col items-center justify-between w-full h-full min-w-0 p-1.5 sm:p-2.5 rounded-xl bg-[#FBF1D4]/30 border border-[#8A5414]/25 card-enter">
+    <div class="flex flex-col items-center justify-between w-full ${slotHeightCls} min-w-0 ${boxPadCls} rounded-xl bg-[#FBF1D4]/30 border border-[#8A5414]/25 card-enter">
       ${slotHeader}
       <button onclick="handlePlacedCardClick(${pos.index})"
               class="perspective-1200 ${cardSizeCls} clow-aspect focus:outline-none ${isAllPlaced ? 'cursor-pointer' : 'cursor-not-allowed'} group ${highlightCls}"
@@ -1228,33 +1775,107 @@ function buildSlotHTML(pos) {
 
 function renderSpreadBoard() {
   const wrapper = document.getElementById('board-slots-wrapper');
+  const controlsBar = document.getElementById('board-canvas-controls');
   if (!activeSpread || !wrapper) return;
 
   const getPos = (idx) => activeSpread.positions.find((p) => p.index === idx);
+  const showCanvasControls = activeSpread.card_count > 1;
+  if (controlsBar) {
+    controlsBar.classList.toggle('hidden', !showCanvasControls);
+  }
 
   if (activeSpread.layoutType === 'single') {
+    spreadCanvasZoom = 1;
     wrapper.innerHTML = `<div class="flex justify-center items-center py-1 max-w-xs mx-auto">${buildSlotHTML(getPos(1))}</div>`;
+    return;
+  }
+
+  let innerBoardHTML = '';
+  if (activeSpread.layoutType === 'romance7') {
+    innerBoardHTML = `
+      <div class="grid grid-cols-8 gap-x-1.5 sm:gap-x-2.5 gap-y-2 sm:gap-y-3 items-stretch w-[340px] sm:w-[600px] mx-auto">
+        <div class="col-start-3 col-span-2">${buildSlotHTML(getPos(1))}</div>
+        <div class="col-start-1 col-span-2 row-start-2">${buildSlotHTML(getPos(4))}</div>
+        <div class="col-start-3 col-span-2 row-start-2">${buildSlotHTML(getPos(6))}</div>
+        <div class="col-start-5 col-span-2 row-start-2">${buildSlotHTML(getPos(3))}</div>
+        <div class="col-start-2 col-span-2 row-start-3">${buildSlotHTML(getPos(2))}</div>
+        <div class="col-start-4 col-span-2 row-start-3">${buildSlotHTML(getPos(5))}</div>
+        <div class="col-start-7 col-span-2 row-start-3">${buildSlotHTML(getPos(7))}</div>
+      </div>
+    `;
+  } else if (activeSpread.layoutType === 'general10') {
+    innerBoardHTML = `
+      <div class="grid grid-cols-6 gap-x-1.5 sm:gap-x-2.5 items-stretch w-[560px] sm:w-[760px] mx-auto">
+        <div class="flex flex-col justify-center">
+          ${buildSlotHTML(getPos(7))}
+        </div>
+        <div class="flex flex-col justify-center gap-1.5 sm:gap-2.5">
+          ${buildSlotHTML(getPos(3))}
+          ${buildSlotHTML(getPos(5))}
+        </div>
+        <div class="flex flex-col justify-center gap-1.5 sm:gap-2.5">
+          ${buildSlotHTML(getPos(1))}
+          ${buildSlotHTML(getPos(9))}
+          ${buildSlotHTML(getPos(2))}
+        </div>
+        <div class="flex flex-col justify-center gap-1.5 sm:gap-2.5">
+          ${buildSlotHTML(getPos(4))}
+          ${buildSlotHTML(getPos(6))}
+        </div>
+        <div class="flex flex-col justify-center">
+          ${buildSlotHTML(getPos(8))}
+        </div>
+        <div class="flex flex-col justify-end">
+          ${buildSlotHTML(getPos(10))}
+        </div>
+      </div>
+    `;
   } else if (activeSpread.layoutType === 'cross') {
-    wrapper.innerHTML = `
-      <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 sm:gap-y-3.5 items-stretch justify-items-stretch max-w-xl mx-auto">
+    innerBoardHTML = `
+      <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 sm:gap-y-3.5 items-stretch justify-items-stretch w-[320px] sm:w-[540px] mx-auto">
         <div></div>${buildSlotHTML(getPos(2))}<div></div>
         ${buildSlotHTML(getPos(4))}${buildSlotHTML(getPos(1))}${buildSlotHTML(getPos(3))}
         <div></div>${buildSlotHTML(getPos(5))}<div></div>
       </div>
     `;
   } else {
-    wrapper.innerHTML = `
-      <div class="space-y-2.5 sm:space-y-3.5">
-        <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 items-stretch justify-items-stretch max-w-xl mx-auto">
+    innerBoardHTML = `
+      <div class="space-y-2.5 sm:space-y-3.5 w-[320px] sm:w-[540px] mx-auto">
+        <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 items-stretch justify-items-stretch">
           ${buildSlotHTML(getPos(1))}${buildSlotHTML(getPos(2))}${buildSlotHTML(getPos(3))}
         </div>
         <div class="border-t border-dashed border-[#8A5414]/45"></div>
-        <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 items-stretch justify-items-stretch max-w-xl mx-auto">
+        <div class="grid grid-cols-3 gap-x-1.5 sm:gap-x-3 gap-y-2 items-stretch justify-items-stretch">
           ${buildSlotHTML(getPos(4))}${buildSlotHTML(getPos(5))}${buildSlotHTML(getPos(6))}
         </div>
       </div>
     `;
   }
+
+  const prevVp = document.getElementById('board-canvas-viewport');
+  const prevLeft = prevVp ? prevVp.scrollLeft : 0;
+  const prevTop = prevVp ? prevVp.scrollTop : 0;
+
+  wrapper.innerHTML = `
+    <div id="board-canvas-viewport" class="w-full overflow-auto rounded-lg border border-[#8A5414]/25 bg-[#FBF1D4]/20 p-2 sm:p-3">
+      <div id="board-canvas-sizer" class="relative mx-auto">
+        <div id="board-canvas-stage" class="inline-block">
+          ${innerBoardHTML}
+        </div>
+      </div>
+    </div>
+  `;
+
+  bindBoardCanvasInteractions();
+  requestAnimationFrame(() => {
+    applySpreadCanvasZoom();
+    const vp = document.getElementById('board-canvas-viewport');
+    if (vp && (prevLeft || prevTop)) {
+      vp.scrollLeft = prevLeft;
+      vp.scrollTop = prevTop;
+    }
+    updateQuestNavArrow();
+  });
 }
 
 function handlePlacedCardClick(posIndex) {
@@ -1618,11 +2239,12 @@ function openFullReadingModal() {
     const mid = Math.ceil(sortedSlots.length / 2);
     const row1 = sortedSlots.slice(0, mid);
     const row2 = sortedSlots.slice(mid);
+    const stripCardWidth = sortedSlots.length >= 7 ? 'w-14 sm:w-20 md:w-24' : 'w-20 sm:w-24 md:w-28';
     const renderStripRow = (slots) =>
       slots
         .map(
           (slot) => `
-          <div class="w-20 sm:w-24 md:w-28 shrink-0 hero-float-2" data-card-front-slot="${slot.card.id}" title="${slot.card.name} — ${slot.card.thaiName}">
+          <div class="${stripCardWidth} shrink-0 hero-float-2" data-card-front-slot="${slot.card.id}" title="${slot.card.name} — ${slot.card.thaiName}">
             ${buildMinimalCardFrontHTML(slot.card)}
           </div>
         `
@@ -1639,15 +2261,8 @@ function openFullReadingModal() {
           </h3>
         </div>
 
-        <div class="flex flex-col items-center gap-2.5 py-1">
-          <div class="flex items-center justify-center gap-2.5 sm:gap-3">
-            ${renderStripRow(row1)}
-          </div>
-          ${
-            row2.length
-              ? `<div class="flex items-center justify-center gap-2.5 sm:gap-3">${renderStripRow(row2)}</div>`
-              : ''
-          }
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5">
+          ${renderStripRow(sortedSlots)}
         </div>
 
         ${buildAiOraclePanelHTML()}
@@ -1685,13 +2300,37 @@ function openFullReadingModal() {
   triggerAiInterpretation();
 }
 
-let isModalScrollControlsHidden = false;
+let isModalScrollControlsVisible = false;
+let modalScrollAutoHideTimer = null;
+
+function scheduleModalScrollControlsHide() {
+  if (modalScrollAutoHideTimer) {
+    clearTimeout(modalScrollAutoHideTimer);
+  }
+  modalScrollAutoHideTimer = setTimeout(() => {
+    isModalScrollControlsVisible = false;
+    updateModalScrollButtons();
+  }, 3000);
+}
+
+function showModalScrollControlsTemporarily() {
+  isModalScrollControlsVisible = true;
+  updateModalScrollButtons();
+  scheduleModalScrollControlsHide();
+}
 
 function syncReadingModalOffset(modal) {
   if (!modal) return;
-  isModalScrollControlsHidden = false;
+  if (modalScrollAutoHideTimer) {
+    clearTimeout(modalScrollAutoHideTimer);
+    modalScrollAutoHideTimer = null;
+  }
+  isModalScrollControlsVisible = false;
   const controlsWrap = document.getElementById('modal-scroll-controls');
-  if (controlsWrap) controlsWrap.classList.remove('hidden');
+  if (controlsWrap) {
+    controlsWrap.classList.remove('opacity-100');
+    controlsWrap.classList.add('opacity-0');
+  }
   const headerEl = document.getElementById('main-header');
   const headerBottom = headerEl ? Math.ceil(headerEl.getBoundingClientRect().bottom) : 64;
   const isMobile = window.innerWidth < 640;
@@ -1703,11 +2342,15 @@ function syncReadingModalOffset(modal) {
     scrollBox.style.maxHeight = `calc(100dvh - ${headerBottom + (isMobile ? 22 : 18)}px)`;
     if (!scrollBox.dataset.boundScrollNav) {
       scrollBox.dataset.boundScrollNav = '1';
-      scrollBox.addEventListener('scroll', updateModalScrollButtons, { passive: true });
+      scrollBox.addEventListener('scroll', () => {
+        if (isModalScrollControlsVisible) {
+          updateModalScrollButtons();
+          scheduleModalScrollControlsHide();
+        }
+      }, { passive: true });
       scrollBox.addEventListener('click', (event) => {
         if (event.target.closest('button, a, input, textarea, select')) return;
-        isModalScrollControlsHidden = !isModalScrollControlsHidden;
-        updateModalScrollButtons();
+        showModalScrollControlsTemporarily();
       });
     }
     requestAnimationFrame(updateModalScrollButtons);
@@ -1722,28 +2365,50 @@ function updateModalScrollButtons() {
   const downBtn = document.getElementById('modal-scroll-down-btn');
   if (!scrollBox || !upBtn || !downBtn) return;
 
-  if (controlsWrap) {
-    controlsWrap.classList.toggle('hidden', isModalScrollControlsHidden);
-  }
-  if (isModalScrollControlsHidden) return;
-
   const canScroll = scrollBox.scrollHeight > scrollBox.clientHeight + 10;
   if (!canScroll) {
+    if (controlsWrap) {
+      controlsWrap.classList.add('hidden', 'opacity-0');
+      controlsWrap.classList.remove('opacity-100');
+    }
     upBtn.classList.add('hidden');
     downBtn.classList.add('hidden');
     return;
   }
 
+  if (controlsWrap) controlsWrap.classList.remove('hidden');
+
+  if (!isModalScrollControlsVisible) {
+    if (controlsWrap) {
+      controlsWrap.classList.remove('opacity-100');
+      controlsWrap.classList.add('opacity-0');
+    }
+    upBtn.classList.remove('pointer-events-auto');
+    downBtn.classList.remove('pointer-events-auto');
+    upBtn.classList.add('pointer-events-none');
+    downBtn.classList.add('pointer-events-none');
+    return;
+  }
+
+  if (controlsWrap) {
+    controlsWrap.classList.remove('opacity-0');
+    controlsWrap.classList.add('opacity-100');
+  }
   const atTop = scrollBox.scrollTop <= 8;
   const atBottom = scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 8;
   upBtn.classList.toggle('hidden', atTop);
   downBtn.classList.toggle('hidden', atBottom);
+  upBtn.classList.toggle('pointer-events-auto', !atTop);
+  upBtn.classList.toggle('pointer-events-none', atTop);
+  downBtn.classList.toggle('pointer-events-auto', !atBottom);
+  downBtn.classList.toggle('pointer-events-none', atBottom);
 }
 
 function scrollReadingModal(direction) {
   const modal = document.getElementById('reading-modal');
   const scrollBox = modal ? modal.querySelector('.editorial-scroll') : null;
   if (!scrollBox) return;
+  scheduleModalScrollControlsHide();
   const step = Math.max(180, Math.round(scrollBox.clientHeight * 0.65));
   scrollBox.scrollBy({ top: direction * step, behavior: 'smooth' });
 }
@@ -1963,13 +2628,21 @@ Object.assign(window, {
   drawAllRemainingCards,
   confirmArmedCardSelection,
   closeDrawNoticeModal,
+  closeRitualFocusModal,
+  acceptAnalyticsConsent,
   scrollToNextQuestCard,
+  adjustSpreadZoom,
+  resetSpreadZoom,
+  panSpreadCanvas,
   handlePlacedCardClick,
   shareOrSaveSummary,
   toggleLanguage,
   revealAllAndOpenSummary,
   openNextUnrevealedCard,
   openFullReadingModal,
+  openBoardSummaryModal,
+  openCompatibilitySummaryModal,
+  skipCompatibilityAnimation,
   closeReadingModal,
   scrollReadingModal,
   handleBackdropClick,
@@ -2021,6 +2694,40 @@ function toggleLanguage() {
   return nextLang;
 }
 
+function acceptAnalyticsConsent() {
+  grantAnalyticsConsent();
+  const modal = document.getElementById('analytics-consent-modal');
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }, 500);
+  }
+  trackEvent('page_view');
+}
+
+function initAnalyticsConsentGate() {
+  if (hasAnalyticsConsent()) {
+    trackEvent('page_view');
+    return;
+  }
+  const modal = document.getElementById('analytics-consent-modal');
+  if (modal) {
+    setTimeout(() => {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        const card = modal.querySelector('.vintage-frame');
+        if (card) card.classList.remove('translate-y-2');
+      });
+    }, 400);
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   initStickyCompactHeader();
   initHeroCardShowcase();
@@ -2029,7 +2736,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initAutoBgm();
   preloadAllBgmTracks();
   applyLanguage('th');
-  trackEvent('page_view');
+  initAnalyticsConsentGate();
 
   window.addEventListener('scroll', updateQuestNavArrow, { passive: true });
   window.addEventListener('resize', () => {

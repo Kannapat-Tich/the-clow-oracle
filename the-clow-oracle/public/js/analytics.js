@@ -5,6 +5,21 @@
  */
 
 const SESSION_KEY = 'clow_anon_session_id';
+const CONSENT_KEY = 'clow_analytics_consent_v1';
+
+export function hasAnalyticsConsent() {
+  try {
+    return localStorage.getItem(CONSENT_KEY) === 'accepted';
+  } catch (_) {
+    return false;
+  }
+}
+
+export function grantAnalyticsConsent() {
+  try {
+    localStorage.setItem(CONSENT_KEY, 'accepted');
+  } catch (_) {}
+}
 
 function getAnonSessionId() {
   try {
@@ -22,6 +37,7 @@ function getAnonSessionId() {
 }
 
 export function trackEvent(eventType, details = {}) {
+  if (!hasAnalyticsConsent()) return;
   const payload = {
     eventType,
     sessionId: getAnonSessionId(),

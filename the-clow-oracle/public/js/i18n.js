@@ -8,35 +8,50 @@ const LANG_STORAGE_KEY = 'clow_ui_lang';
 const SPREAD_EN = {
   daily_single: {
     name: 'Daily Reading',
-    purpose: 'Draw 1 card to receive your guiding message for today.',
+    purpose: 'Draw 1 card to receive your guiding message for today (best performed in the morning).',
     questionPlaceholder: 'Optional: share what is on your mind today (work, study, love, or decisions)...',
     positions: {
       1: { title: 'Daily Guidance', meaning: 'Core energy and direction to hold onto today' }
     }
   },
   love_cross: {
-    name: 'Romance & Heart Cross',
-    purpose: 'A 5-card cross revealing inner feelings, mutual perspectives, obstacles, and relationship direction.',
+    name: 'Romance Reading',
+    purpose: 'A 7-card spread from the official guidebook revealing your loved one’s nature, past, present, future, obstacle, outcome, and advice.',
     questionPlaceholder: 'Optional: describe your relationship situation or feelings you wish to ask about...',
     positions: {
-      1: { title: 'Heart of the Situation', meaning: 'The core truth of the relationship right now' },
-      2: { title: 'Inner Feelings', meaning: 'What you deeply desire or keep hidden inside' },
-      3: { title: 'The Other Perspective', meaning: 'Attitude and energy from the person on your mind' },
-      4: { title: 'Tests & Obstacles', meaning: 'Challenges to watch out for or heal together' },
-      5: { title: 'Outcome & Advice', meaning: 'Near-future direction for the relationship' }
+      1: { title: 'Their True Nature', meaning: 'Personality and true nature of the person you like or love' },
+      2: { title: 'Past Situation', meaning: 'Past history and dynamics between you and them' },
+      3: { title: 'Present Situation', meaning: 'Where things stand between you two right now' },
+      4: { title: 'Future Outlook', meaning: 'Near-future direction for you and the person' },
+      5: { title: 'Obstacle to Overcome', meaning: 'The problem to overcome to get along well together' },
+      6: { title: 'Romantic Result', meaning: 'The final outcome of your romance' },
+      7: { title: 'Relationship Advice', meaning: 'Advice for cultivating a good relationship' }
     }
   },
   general_six: {
-    name: 'General & Future Destiny',
-    purpose: 'A 6-card spread exploring past roots, present stance, hidden support, cautions, decisions, and final outcome.',
+    name: 'General Reading',
+    purpose: 'A 10-card spread from the official guidebook exploring the subject, cause, past, surroundings, solution, key, obstacle, future, result, and outlook.',
     questionPlaceholder: 'Optional: share a situation about work, study, finances, or an important decision...',
     positions: {
-      1: { title: 'Past Foundation', meaning: 'Past events shaping your present situation' },
-      2: { title: 'Present Situation', meaning: 'Where you stand and what surrounds you now' },
-      3: { title: 'Hidden Support', meaning: 'Unseen allies or quiet opportunities helping you' },
-      4: { title: 'Points of Caution', meaning: 'Obstacles or carelessness to avoid' },
-      5: { title: 'Key Decision', meaning: 'The turning-point action that improves things' },
-      6: { title: 'Final Outcome', meaning: 'Where things lead if you follow the guidance' }
+      1: { title: 'Subject of the Matter', meaning: 'The core topic or issue you are asking about' },
+      2: { title: 'Cause of the Matter', meaning: 'Root cause behind the situation' },
+      3: { title: 'Past Problems', meaning: 'Past issues linked to this matter' },
+      4: { title: 'Surrounding Circumstances', meaning: 'External factors and environment around you' },
+      5: { title: 'Solution', meaning: 'How to resolve the matter' },
+      6: { title: 'Key to Resolution', meaning: 'Keyword or turning point for solving the issue' },
+      7: { title: 'Obstacle', meaning: 'Obstacle when working toward a solution' },
+      8: { title: 'Future of the Matter', meaning: 'How the situation develops next' },
+      9: { title: 'End Result', meaning: 'Final outcome of the situation' },
+      10: { title: 'Others’ View & Long-Term', meaning: 'How others perceive it and the long-term outlook' }
+    }
+  },
+  compatibility_52: {
+    name: 'Compatibility Reading',
+    purpose: 'Uses all 52 cards with automatic adjacent suit pairing to measure compatibility, plus cause & advice cards.',
+    questionPlaceholder: 'Optional: share the relationship context between the two people...',
+    positions: {
+      1: { title: 'Leftmost Card · Cause / Obstacle', meaning: 'Root cause or friction affecting compatibility' },
+      2: { title: 'Rightmost Card · Advice', meaning: 'Guidance to foster a healthier, smoother bond' }
     }
   }
 };
@@ -47,7 +62,7 @@ const DICT = {
     heroTitle: 'เปิดตำราพยากรณ์ไพ่โคลว์การ์ด',
     heroSub: 'สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ',
     btnShuffleNew: '↻ สับไพ่ใหม่',
-    boardTitle: 'แท่นวางไพ่พยากรณ์ (เปิดตามลำดับคู่มือ)',
+    boardTitle: 'แท่นวางไพ่โคลว์การ์ด (เปิดตามลำดับคู่มือ)',
     stepperQuestion: 'ฝากคำถาม (ข้ามได้)',
     stepperShuffle: 'สับไพ่',
     stepperShuffleAlt: 'สับสำรับไพ่',

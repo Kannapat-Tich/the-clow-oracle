@@ -2,7 +2,8 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#F3E2B3" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="description" content="The Clow Cardcaptor Sakura — ทำนายไพ่ซากุระ 52 ใบ พร้อมระบบตีความตามคู่มือและ AI" />
@@ -127,7 +128,7 @@
   <!-- ======================================================================= -->
   <!-- STICKY & AUTO-COMPACTING HEADER                                         -->
   <!-- ======================================================================= -->
-  <header id="main-header" class="sticky top-0 z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2 sm:pt-3 pb-1">
+  <header id="main-header" class="sticky top-0 z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 pb-1">
     <div id="header-frame" class="vintage-frame rounded-lg px-3 sm:px-5 py-2.5 sm:py-3 flex flex-col gap-1.5">
       <span class="header-flourish hidden sm:block absolute top-1.5 left-2 text-[11px] text-[#8A5414] select-none">❧</span>
       <span class="header-flourish hidden sm:block absolute top-1.5 right-2 text-[11px] text-[#8A5414] select-none">☙</span>
@@ -137,8 +138,21 @@
       <!-- Row 1: Brand & Controls -->
       <div class="flex flex-nowrap items-center justify-between gap-1 sm:gap-2">
         <button onclick="resetToHome()" class="flex items-center gap-1.5 sm:gap-2 text-left group focus:outline-none shrink-0 min-h-[28px]">
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#F8DF94] to-[#C88418] border border-[#4A1F12] flex items-center justify-center text-[#2A160E] shadow-sm group-hover:rotate-45 transition-transform duration-500 shrink-0">
-            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FBF1D4] border border-[#4A1F12] flex items-center justify-center shadow-sm group-hover:rotate-45 transition-transform duration-500 shrink-0 p-1">
+            <svg viewBox="0 0 64 64" class="w-full h-full" aria-hidden="true">
+              <defs>
+                <linearGradient id="clowStarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFF2A6" />
+                  <stop offset="50%" stop-color="#F2C138" />
+                  <stop offset="100%" stop-color="#C97E18" />
+                </linearGradient>
+              </defs>
+              <polygon points="32,4 39.5,19 56,19 44,32 56,45 39.5,45 32,60 24.5,45 8,45 20,32 8,19 24.5,19"
+                       fill="url(#clowStarGold)" stroke="#4A1F12" stroke-width="2.6" stroke-linejoin="round" />
+              <line x1="32" y1="4" x2="32" y2="60" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
+              <line x1="8" y1="19" x2="56" y2="45" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
+              <line x1="56" y1="19" x2="8" y2="45" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
+            </svg>
           </span>
           <div class="flex flex-col items-start gap-0.5 leading-tight">
             <span class="font-cinzel text-[8px] sm:text-[9px] tracking-[0.14em] uppercase text-[#6D3B16]/85">
@@ -157,7 +171,7 @@
 
         <div class="flex flex-nowrap items-center gap-1 sm:gap-2 ml-auto min-w-0">
           <button id="btn-home" onclick="resetToHome()"
-                  class="hidden shrink-0 p-1 leading-none inline-flex items-center justify-center text-[#111111] hover:opacity-75 transition-opacity bg-transparent border-0 focus:outline-none"
+                  class="hidden shrink-0 p-1 leading-none inline-flex items-center justify-center text-[#8A5414] hover:opacity-75 transition-opacity bg-transparent border-0 focus:outline-none"
                   title="หน้าหลัก"
                   aria-label="หน้าหลัก">
             <svg viewBox="0 0 24 24" class="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="currentColor" aria-hidden="true">
@@ -233,7 +247,7 @@
         </p>
       </div>
 
-      <div id="spread-options-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4"></div>
+      <div id="spread-options-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"></div>
     </section>
 
     <!-- STEP 2 & 3: TABLETOP SHUFFLE, DRAW & 3D SPREAD BOARD -->
@@ -259,12 +273,31 @@
             <div class="flex items-center gap-1.5">
               <span class="text-[#8A5414] text-xs">✦</span>
               <span class="font-fahkwang text-xs sm:text-sm text-[#2A160E]">
-                แท่นวางไพ่พยากรณ์ (เปิดตามลำดับคู่มือ)
+                แท่นวางไพ่โคลว์การ์ด (เปิดตามลำดับคู่มือ)
               </span>
             </div>
             <span id="board-stage-hint" class="font-pridi text-[11px] sm:text-xs text-[#4F2031]">
               เลือกไพ่จากกองด้านบนเพื่อวางลงตำแหน่ง
             </span>
+          </div>
+
+          <div id="board-canvas-controls" class="hidden flex items-center justify-end gap-1 mb-2 px-1">
+            <button type="button" onclick="adjustSpreadZoom(-0.15)"
+                    class="btn-vintage-secondary px-2 py-1 rounded text-[11px] font-fahkwang leading-none"
+                    title="ซูมออกเฉพาะแท่นไพ่" aria-label="ซูมออก">
+              −
+            </button>
+            <button type="button" onclick="resetSpreadZoom()"
+                    id="board-zoom-label"
+                    class="btn-vintage-secondary px-2 py-1 rounded text-[10px] sm:text-[11px] font-fahkwang leading-none min-w-[46px] text-center"
+                    title="รีเซ็ตขนาดแท่นไพ่">
+              100%
+            </button>
+            <button type="button" onclick="adjustSpreadZoom(0.15)"
+                    class="btn-vintage-secondary px-2 py-1 rounded text-[11px] font-fahkwang leading-none"
+                    title="ซูมเข้าเฉพาะแท่นไพ่" aria-label="ซูมเข้า">
+              +
+            </button>
           </div>
 
           <div id="board-slots-wrapper" class="w-full my-auto py-0.5 sm:py-1"></div>
@@ -278,12 +311,17 @@
 
           <div id="board-summary-cta" class="hidden mt-2.5 sm:mt-3 bg-[#F8DF94]/55 border border-[#4F2031]/45 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
             <div class="space-y-0.5">
-              <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">✦ เปิดอ่านไพ่ครบทุกตำแหน่งแล้ว</p>
-              <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปคำทำนายรวมทุกใบ</p>
+              <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">✦ เปิดอ่านไพ่เรียบร้อยแล้ว</p>
+              <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปคำทำนาย หรือเลือกการทำนายรูปแบบอื่น</p>
             </div>
-            <button onclick="openFullReadingModal()" class="btn-vintage-plum whitespace-nowrap px-4 py-2 rounded-md text-xs font-fahkwang shrink-0">
-              ✦ อ่านบทสรุปคำทำนายรวม
-            </button>
+            <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
+              <button onclick="openBoardSummaryModal()" class="btn-vintage-plum whitespace-nowrap px-4 py-2 rounded-md text-xs font-fahkwang shrink-0">
+                ✦ อ่านบทสรุปคำทำนาย
+              </button>
+              <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] whitespace-nowrap px-3.5 py-2 rounded-md text-xs font-fahkwang shrink-0 transition-colors">
+                การทำนายอื่น ๆ
+              </button>
+            </div>
           </div>
 
           <div id="board-reveal-all-footer" class="hidden mt-2.5 sm:mt-3 flex justify-center">
@@ -463,6 +501,66 @@
 
   </main>
 
+  <!-- ANALYTICS CONSENT MODAL (แสดงครั้งแรกครั้งเดียว บังคับยินยอมก่อนเข้าใช้งาน) -->
+  <div id="analytics-consent-modal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-700 items-center justify-center p-4 bg-[#2A160E]/65 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="analytics-consent-title">
+    <div class="vintage-frame relative w-full max-w-md rounded-xl p-5 sm:p-6 shadow-2xl text-center space-y-3.5 transition-transform duration-700 translate-y-2">
+      <div class="flex items-center justify-center gap-2 text-[#8A5414]">
+        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
+        <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.18em] uppercase text-[#4F2031]">
+          ✦ Privacy & Usage Notice ✦
+        </span>
+        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
+      </div>
+
+      <h3 id="analytics-consent-title" class="font-charm text-xl sm:text-2xl text-[#2A160E] leading-snug">
+        ขอความยินยอมการจัดเก็บสถิติ<br />และการใช้งาน
+      </h3>
+
+      <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">
+        เว็บไซต์นี้มีการเก็บข้อมูลสถิติการใช้งานแบบ<strong>ไม่ระบุตัวตน</strong> เพื่อนำไปพัฒนาประสบการณ์การใช้งานให้ดียิ่งขึ้น
+      </p>
+
+      <div class="bg-[#FCF4DC] border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#523020] leading-relaxed">
+        <strong>ไม่มีการเก็บข้อมูลส่วนบุคคล และจะไม่เก็บความลับ คำถาม หรือปัญหาที่ผู้ใช้ฝากไว้โดยเด็ดขาด</strong>
+      </div>
+
+      <div class="pt-1">
+        <button onclick="acceptAnalyticsConsent()"
+                class="btn-vintage-primary w-full px-6 py-2.5 rounded-md text-xs sm:text-sm font-fahkwang min-h-[42px]">
+          ✦ ยินยอมและเข้าสู่หน้าทำนาย
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RITUAL FOCUS MODAL (แสดงคำแนะนำการเพ่งจิตตามคู่มือ เช่น Romance Reading) -->
+  <div id="ritual-focus-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#2A160E]/60 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="ritual-focus-title">
+    <div class="vintage-frame modal-fade-in relative w-full max-w-md rounded-xl p-5 sm:p-6 shadow-2xl text-center space-y-3.5">
+      <div class="flex items-center justify-center gap-2 text-[#8A5414]">
+        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
+        <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.18em] uppercase text-[#4F2031]">
+          ✦ Clow Guidebook Ritual ✦
+        </span>
+        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
+      </div>
+
+      <h3 id="ritual-focus-title" class="font-charm text-xl sm:text-2xl text-[#2A160E] leading-snug">
+        ตั้งจิตก่อนเริ่มทำนาย
+      </h3>
+
+      <p id="ritual-focus-body" class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed"></p>
+
+      <div id="ritual-focus-tip" class="hidden bg-[#FCF4DC] border border-[#8F5B6E]/55 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#4F2031] leading-relaxed"></div>
+
+      <div class="pt-1">
+        <button onclick="closeRitualFocusModal()"
+                class="btn-vintage-primary w-full sm:w-auto px-6 py-2 rounded-md text-xs sm:text-sm font-fahkwang min-h-[40px]">
+          ✦ เข้าใจแล้ว · เริ่มตั้งจิต
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- DRAW NOTICE MODAL (แสดงหลังกรีดไพ่ครบ 52 ใบก่อนเลือกไพ่) -->
   <div id="draw-notice-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#2A160E]/60 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="draw-notice-title">
     <div class="vintage-frame modal-fade-in relative w-full max-w-md rounded-xl p-5 sm:p-6 shadow-2xl text-center space-y-3.5">
@@ -514,7 +612,7 @@
 
       <div id="modal-reading-body"></div>
 
-      <div id="modal-scroll-controls" class="sticky bottom-6 sm:bottom-4 z-20 flex justify-center gap-2 pointer-events-none mt-2 mb-1">
+      <div id="modal-scroll-controls" class="sticky bottom-6 sm:bottom-4 z-20 flex justify-center gap-2 pointer-events-none mt-2 mb-1 opacity-0 transition-opacity duration-500">
         <button id="modal-scroll-up-btn" onclick="scrollReadingModal(-1)"
                 class="hidden pointer-events-auto btn-vintage-secondary px-3 py-1 rounded-full text-[11px] font-fahkwang shadow-md">
           ↑ เลื่อนขึ้น
@@ -531,11 +629,15 @@
     </div>
   </div>
 
-  <!-- FLOATING QUEST GUIDE ARROW (ชี้ไปยังไพ่ใบถัดไปเมื่ออยู่ต่ำกว่าหน้าจอ) -->
+  <!-- FLOATING QUEST GUIDE ARROW (ชี้ 360 องศาไปยังไพ่ใบถัดไปที่อยู่นอกหน้าจอ) -->
   <button id="quest-nav-arrow"
           onclick="scrollToNextQuestCard()"
-          class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 btn-vintage-primary px-4 py-2 rounded-full text-xs font-fahkwang shadow-lg flex items-center gap-1.5 animate-bounce">
-    <span id="quest-nav-arrow-text">↓ แตะเปิดไพ่ลำดับถัดไป</span>
+          class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 btn-vintage-primary px-4 py-2 rounded-full text-xs font-fahkwang shadow-lg flex items-center gap-2">
+    <svg id="quest-nav-arrow-icon" viewBox="0 0 24 24" class="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+    <span id="quest-nav-arrow-text">แตะเปิดไพ่ลำดับถัดไป</span>
   </button>
 
   <!-- FOOTER -->
