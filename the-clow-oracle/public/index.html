@@ -128,7 +128,7 @@
   <!-- STICKY & AUTO-COMPACTING HEADER                                         -->
   <!-- ======================================================================= -->
   <header id="main-header" class="sticky top-0 z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2 sm:pt-3 pb-1">
-    <div id="header-frame" class="vintage-frame rounded-lg px-3 sm:px-5 py-1.5 sm:py-2 flex flex-col gap-1.5">
+    <div id="header-frame" class="vintage-frame rounded-lg px-3 sm:px-5 py-2.5 sm:py-3 flex flex-col gap-1.5">
       <span class="header-flourish hidden sm:block absolute top-1.5 left-2 text-[11px] text-[#8A5414] select-none">❧</span>
       <span class="header-flourish hidden sm:block absolute top-1.5 right-2 text-[11px] text-[#8A5414] select-none">☙</span>
       <span class="header-flourish hidden sm:block absolute bottom-1.5 left-2 text-[11px] text-[#8A5414] select-none">❧</span>
@@ -137,8 +137,8 @@
       <!-- Row 1: Brand & Controls -->
       <div class="flex flex-nowrap items-center justify-between gap-1 sm:gap-2">
         <button onclick="resetToHome()" class="flex items-center gap-1.5 sm:gap-2 text-left group focus:outline-none shrink-0 min-h-[28px]">
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#F8DF94] to-[#C88418] border border-[#4A1F12] flex items-center justify-center text-[#2A160E] text-[11px] sm:text-xs shadow-sm group-hover:rotate-45 transition-transform duration-500 shrink-0">
-            ☀
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#F8DF94] to-[#C88418] border border-[#4A1F12] flex items-center justify-center text-[#2A160E] shadow-sm group-hover:rotate-45 transition-transform duration-500 shrink-0">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           </span>
           <div class="flex flex-col items-start gap-0.5 leading-tight">
             <span class="font-cinzel text-[8px] sm:text-[9px] tracking-[0.14em] uppercase text-[#6D3B16]/85">
@@ -146,7 +146,7 @@
             </span>
             <div class="flex items-baseline gap-2 whitespace-nowrap">
               <span class="font-cinzel text-[11px] sm:text-base md:text-lg font-bold tracking-[0.08em] sm:tracking-[0.16em] text-[#2A160E] group-hover:text-[#4F2031] transition-colors">
-                THE CLOW
+                CLOW CARDS
               </span>
               <span class="header-subtitle hidden lg:inline font-charm text-base text-[#4F2031]">
                 — คัมภีร์พยากรณ์ไพ่ (52 ใบ)
@@ -157,8 +157,12 @@
 
         <div class="flex flex-nowrap items-center gap-1 sm:gap-2 ml-auto min-w-0">
           <button id="btn-home" onclick="resetToHome()"
-                  class="hidden btn-vintage-secondary whitespace-nowrap shrink-0 text-[10px] sm:text-xs font-fahkwang px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg leading-none">
-            ✦ หน้าหลัก
+                  class="hidden shrink-0 p-1 leading-none inline-flex items-center justify-center text-[#111111] hover:opacity-75 transition-opacity bg-transparent border-0 focus:outline-none"
+                  title="หน้าหลัก"
+                  aria-label="หน้าหลัก">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="currentColor" aria-hidden="true">
+              <path d="M11.35 3.24a1 1 0 0 1 1.3 0l8 6.86a1 1 0 0 1-.65 1.76H19v8.14a1 1 0 0 1-1 1h-4.5v-5.5h-3V21H6a1 1 0 0 1-1-1v-8.14H4a1 1 0 0 1-.65-1.76l8-6.86Z" />
+            </svg>
           </button>
 
           <!-- Music Controls -->
@@ -212,7 +216,7 @@
         <div id="hero-card-fan" class="relative h-52 sm:h-64 md:h-[300px] py-2 w-full max-w-3xl flex items-center justify-center select-none"></div>
       </div>
 
-      <div class="max-w-2xl mx-auto text-center space-y-1 px-4 sm:px-6 py-3 rounded-2xl bg-[#FBF1D4]/25 backdrop-blur-[1px]">
+      <div class="max-w-2xl mx-auto text-center space-y-1 px-4 sm:px-6 py-3 rounded-2xl bg-[#FBF1D4]/10 backdrop-blur-[1px]">
         <div class="flex items-center justify-center gap-2 sm:gap-3 text-[#8A5414]">
           <span class="h-[1px] w-8 sm:w-14 bg-[#8A5414]/75"></span>
           <span class="font-cinzel text-[9px] sm:text-[11px] tracking-[0.16em] sm:tracking-[0.22em] uppercase text-[#4F2031]">
@@ -236,7 +240,7 @@
     <section id="screen-table" class="hidden w-full space-y-2 sm:space-y-3">
       <div id="table-top-banner" class="vintage-frame rounded-lg px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 min-w-0">
-          <span class="text-xs text-[#8A5414] shrink-0">☽</span>
+          <span id="table-banner-icon" class="text-xs text-[#8A5414] shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg></span>
           <h2 id="table-spread-title" class="font-charm text-base sm:text-lg md:text-xl text-[#2A160E] leading-tight truncate">
             ทำนายดวงรายวัน
           </h2>
@@ -266,7 +270,7 @@
           <div id="board-slots-wrapper" class="w-full my-auto py-0.5 sm:py-1"></div>
 
           <div id="board-ritual-guide" class="mt-2.5 sm:mt-3 pt-2 border-t border-[#8A5414]/40 flex items-start gap-2 text-left bg-[#FCF4DC]/80 rounded-lg px-3 sm:px-3.5 py-2 border border-[#8A5414]/35">
-            <span class="text-[#8A5414] text-sm mt-0.5 shrink-0">☽</span>
+            <span class="text-[#8A5414] mt-0.5 shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg></span>
             <p id="board-ritual-guide-text" class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">
               เชื่อในความรู้สึกแวบแรกแล้วแตะเลือกไพ่ใบที่สะดุดตาที่สุดโดยไม่ต้องลังเล
             </p>
@@ -494,11 +498,11 @@
   </div>
 
   <!-- READING MODAL -->
-  <div id="reading-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pb-3 sm:px-6 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
-    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl px-4 pb-4 pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
-      <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 mb-3 bg-[#FBF1D4]/98 border-b border-[#8A5414]/45 flex items-center justify-between gap-2 backdrop-blur-[2px]">
+  <div id="reading-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(4.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
+    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[78dvh] sm:max-h-[86dvh] overflow-y-auto rounded-xl px-4 pb-[calc(1.75rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
+      <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-1.5 mb-1.5 bg-[#FBF1D4]/98 border-b border-[#8A5414]/45 flex items-center justify-between gap-2 backdrop-blur-[2px]">
         <div class="flex items-center gap-1.5 min-w-0">
-          <span class="text-[#8A5414] text-xs shrink-0">☀</span>
+          <span class="text-[#8A5414] shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
           <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.14em] uppercase text-[#4F2031] truncate">
             The Clow Cards
           </span>
@@ -510,11 +514,7 @@
 
       <div id="modal-reading-body"></div>
 
-      <div id="reading-modal-footer-bar" class="hidden mt-4 pt-3 border-t border-[#8A5414]/45 flex items-center justify-end gap-2">
-        <div id="reading-modal-footer-actions" class="flex flex-wrap items-center gap-2 ml-auto"></div>
-      </div>
-
-      <div id="modal-scroll-controls" class="sticky bottom-2 z-20 flex justify-center gap-2 pointer-events-none mt-2">
+      <div id="modal-scroll-controls" class="sticky bottom-6 sm:bottom-4 z-20 flex justify-center gap-2 pointer-events-none mt-2 mb-1">
         <button id="modal-scroll-up-btn" onclick="scrollReadingModal(-1)"
                 class="hidden pointer-events-auto btn-vintage-secondary px-3 py-1 rounded-full text-[11px] font-fahkwang shadow-md">
           ↑ เลื่อนขึ้น
@@ -523,6 +523,10 @@
                 class="hidden pointer-events-auto btn-vintage-primary px-3 py-1 rounded-full text-[11px] font-fahkwang shadow-md">
           ↓ เลื่อนลง
         </button>
+      </div>
+
+      <div id="reading-modal-footer-bar" class="hidden mt-3 pt-3 pb-3 border-t border-[#8A5414]/45 flex items-center justify-end gap-2">
+        <div id="reading-modal-footer-actions" class="flex flex-wrap items-center gap-2 ml-auto"></div>
       </div>
     </div>
   </div>
@@ -536,11 +540,12 @@
 
   <!-- FOOTER -->
   <footer class="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2.5 pb-4 sm:pb-5 relative z-10">
-    <div class="border-t border-[#8A5414]/45 pt-2.5 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
+    <div class="border-t border-[#8A5414]/45 pt-2.5 px-3 pb-2 rounded-xl bg-[#FBF1D4]/5 backdrop-blur-[1px] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
       <p>✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)</p>
       <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3">
-        <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang">
-          ✉ ส่งข้อเสนอแนะ (clowcardreader.dev@gmail.com)
+        <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang inline-flex items-center gap-1">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span>ส่งข้อเสนอแนะ (clowcardreader.dev@gmail.com)</span>
         </a>
         <p class="font-cinzel text-[11px] tracking-wide text-[#2A160E]/85">© CLAMP, ST, Kodansha / NHK, NEP.</p>
       </div>

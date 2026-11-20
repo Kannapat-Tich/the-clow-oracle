@@ -75,20 +75,12 @@ body {
 #main-header {
   transition: padding 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
-#main-header.is-scrolled {
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
-}
 #header-frame {
   transition: padding 0.25s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.25s ease,
               background-color 0.25s ease;
 }
 #main-header.is-scrolled #header-frame {
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
-  padding-left: 0.85rem;
-  padding-right: 0.85rem;
   background: rgba(251, 241, 212, 0.96);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -96,6 +88,18 @@ body {
     inset 0 0 0 2px var(--card-surface),
     inset 0 0 0 3px var(--brass-border),
     0 8px 20px -6px rgba(42, 22, 14, 0.36);
+}
+@media (min-width: 768px) {
+  #main-header.is-scrolled {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+  #main-header.is-scrolled #header-frame {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
 }
 #main-header.is-scrolled .header-flourish,
 #main-header.is-scrolled .header-subtitle,

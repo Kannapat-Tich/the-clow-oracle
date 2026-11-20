@@ -487,9 +487,12 @@ function enterRitualShuffleStage() {
   document.getElementById('docked-resting-deck').classList.add('hidden');
 
   const needsCut = activeSpread.card_count > 1;
-  document.getElementById('btn-proceed-next').textContent = needsCut
+  const proceedBtn = document.getElementById('btn-proceed-next');
+  proceedBtn.textContent = needsCut
     ? '✦ พอใจแล้ว · ไปตัดกองไพ่'
     : '✦ พอใจแล้ว · ไปเลือกไพ่';
+  proceedBtn.disabled = true;
+  proceedBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
   updateRitualPhaseBadges('shuffle');
   setTableProgressText('');
@@ -540,8 +543,10 @@ function enterRitualShuffleStage() {
 
 function proceedFromShuffle() {
   if (isAnimatingRitual) return;
-  if (shuffleCount === 0) {
-    shuffledDeck = fisherYatesShuffle(shuffledDeck);
+  if (shuffleCount < 1) {
+    const sub = document.getElementById('deck-instruction-sub');
+    if (sub) sub.textContent = 'กรุณาแตะสับไพ่อย่างน้อย 1 ครั้งก่อนดำเนินการต่อ';
+    return;
   }
   if (activeSpread.card_count > 1) enterDeckCutStage();
   else enterFanDrawPhase();
@@ -720,9 +725,12 @@ function selectSpread(spreadId) {
   document.getElementById('btn-home').classList.remove('hidden');
 
   document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
-  const bannerIcon = document.querySelector('#table-top-banner span.text-xs');
+  const bannerIcon = document.getElementById('table-banner-icon');
   if (bannerIcon) {
-    bannerIcon.textContent = activeSpread.spread_id === 'love_cross' ? '♥' : '☽';
+    bannerIcon.innerHTML =
+      activeSpread.spread_id === 'love_cross'
+        ? '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.33-8.22C.9 10.17 1.7 6.3 5 4.8a5.2 5.2 0 0 1 6.1 1.35L12 7.2l.9-1.05A5.2 5.2 0 0 1 19 4.8c3.3 1.5 4.1 5.37 2.33 7.98C18.7 16.65 12 21 12 21Z"/></svg>'
+        : '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg>';
   }
   trackEvent('spread_start', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name });
 
@@ -743,6 +751,11 @@ function handleDeckStackInteraction() {
   zone.classList.add('is-shuffling');
 
   document.getElementById('shuffle-counter-badge').textContent = `สับไพ่ไปแล้ว ${shuffleCount} ครั้ง`;
+  const proceedBtn = document.getElementById('btn-proceed-next');
+  if (proceedBtn && shuffleCount >= 1) {
+    proceedBtn.disabled = false;
+    proceedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+  }
   playRapidRiffleSound(14);
 
   setTimeout(() => {
@@ -1645,8 +1658,17 @@ function openFullReadingModal() {
   const fullFooterBar = document.getElementById('reading-modal-footer-bar');
   const fullFooterActions = document.getElementById('reading-modal-footer-actions');
   if (fullFooterBar && fullFooterActions) {
-    fullFooterBar.classList.add('hidden');
-    fullFooterActions.innerHTML = '';
+    fullFooterBar.classList.remove('hidden');
+    fullFooterActions.innerHTML = `
+      <div class="flex flex-col items-end gap-2">
+        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+          กลับสู่แท่นพยากรณ์
+        </button>
+        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">
+          การทำนายอื่น ๆ
+        </button>
+      </div>
+    `;
   }
 
   const modal = document.getElementById('reading-modal');
@@ -1663,8 +1685,13 @@ function openFullReadingModal() {
   triggerAiInterpretation();
 }
 
+let isModalScrollControlsHidden = false;
+
 function syncReadingModalOffset(modal) {
   if (!modal) return;
+  isModalScrollControlsHidden = false;
+  const controlsWrap = document.getElementById('modal-scroll-controls');
+  if (controlsWrap) controlsWrap.classList.remove('hidden');
   const headerEl = document.getElementById('main-header');
   const headerBottom = headerEl ? Math.ceil(headerEl.getBoundingClientRect().bottom) : 64;
   const isMobile = window.innerWidth < 640;
@@ -1673,10 +1700,15 @@ function syncReadingModalOffset(modal) {
   modal.style.paddingTop = `${headerBottom + (isMobile ? 10 : 6)}px`;
   const scrollBox = modal.querySelector('.editorial-scroll');
   if (scrollBox) {
-    scrollBox.style.maxHeight = `calc(100vh - ${headerBottom + (isMobile ? 22 : 18)}px)`;
+    scrollBox.style.maxHeight = `calc(100dvh - ${headerBottom + (isMobile ? 76 : 24)}px)`;
     if (!scrollBox.dataset.boundScrollNav) {
       scrollBox.dataset.boundScrollNav = '1';
       scrollBox.addEventListener('scroll', updateModalScrollButtons, { passive: true });
+      scrollBox.addEventListener('click', (event) => {
+        if (event.target.closest('button, a, input, textarea, select')) return;
+        isModalScrollControlsHidden = !isModalScrollControlsHidden;
+        updateModalScrollButtons();
+      });
     }
     requestAnimationFrame(updateModalScrollButtons);
   }
@@ -1685,9 +1717,15 @@ function syncReadingModalOffset(modal) {
 function updateModalScrollButtons() {
   const modal = document.getElementById('reading-modal');
   const scrollBox = modal ? modal.querySelector('.editorial-scroll') : null;
+  const controlsWrap = document.getElementById('modal-scroll-controls');
   const upBtn = document.getElementById('modal-scroll-up-btn');
   const downBtn = document.getElementById('modal-scroll-down-btn');
   if (!scrollBox || !upBtn || !downBtn) return;
+
+  if (controlsWrap) {
+    controlsWrap.classList.toggle('hidden', isModalScrollControlsHidden);
+  }
+  if (isModalScrollControlsHidden) return;
 
   const canScroll = scrollBox.scrollHeight > scrollBox.clientHeight + 10;
   if (!canScroll) {
@@ -1946,9 +1984,12 @@ function toggleLanguage() {
   initSpreadNavigation();
   if (activeSpread) {
     document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
-  const bannerIcon = document.querySelector('#table-top-banner span.text-xs');
+  const bannerIcon = document.getElementById('table-banner-icon');
   if (bannerIcon) {
-    bannerIcon.textContent = activeSpread.spread_id === 'love_cross' ? '♥' : '☽';
+    bannerIcon.innerHTML =
+      activeSpread.spread_id === 'love_cross'
+        ? '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.33-8.22C.9 10.17 1.7 6.3 5 4.8a5.2 5.2 0 0 1 6.1 1.35L12 7.2l.9-1.05A5.2 5.2 0 0 1 19 4.8c3.3 1.5 4.1 5.37 2.33 7.98C18.7 16.65 12 21 12 21Z"/></svg>'
+        : '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg>';
   }
     updateRitualPhaseBadges(ritualPhase);
     updateQuestionAiStatusNote();

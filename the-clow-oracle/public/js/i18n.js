@@ -239,7 +239,7 @@ export function applyLanguage(lang) {
   }
 
   const mapText = [
-    ['#btn-home', 'navHome'],
+    // Home button uses icon-only SVG to save header space
     ['#screen-select h1', 'heroTitle'],
     ['#screen-select header p', 'heroSub'],
     ['#btn-shuffle', 'btnShuffleNew'],
