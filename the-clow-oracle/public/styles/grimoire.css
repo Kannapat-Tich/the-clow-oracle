@@ -13,6 +13,14 @@
   --brass-border: #9E661A;
 }
 
+html {
+  font-size: 18px;
+}
+
+*, *::before, *::after {
+  font-variant-emoji: text;
+}
+
 body {
   font-family: 'Trirong', Georgia, serif;
   font-weight: 300;
@@ -21,8 +29,8 @@ body {
     radial-gradient(ellipse at 50% 0%, rgba(255, 249, 226, 0.9) 0%, rgba(243, 226, 179, 0.94) 50%, rgba(214, 179, 108, 0.98) 100%),
     repeating-linear-gradient(0deg, rgba(94, 44, 27, 0.025) 0px, rgba(94, 44, 27, 0.025) 1px, transparent 1px, transparent 4px);
   color: var(--ink-chestnut);
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100dvh;
+  overflow-x: clip;
   position: relative;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -315,10 +323,30 @@ body {
   filter: drop-shadow(0 6px 14px rgba(42, 22, 14, 0.14));
 }
 
-.shuffle-layer-card .clow-frame,
-#cut-deck-touchzone .clow-frame,
-.draw-row-card .clow-frame,
-.revealed-board-card .clow-frame,
+.shuffle-layer-card #reading-modal .editorial-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.clow-frame,
+#cut-deck-touchzone #reading-modal .editorial-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.clow-frame,
+.draw-row-card #reading-modal .editorial-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.clow-frame,
+.revealed-board-card #reading-modal .editorial-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.clow-frame,
 .card-face .clow-frame {
   filter: none;
 }
@@ -565,6 +593,11 @@ body.reading-modal-open #main-header {
     inset 0 0 0 6px #9E661A,
     inset 0 0 42px rgba(79, 32, 49, 0.14),
     0 20px 42px -12px rgba(42, 22, 14, 0.28);
+}
+
+#reading-modal .editorial-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .clow-frame,

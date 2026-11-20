@@ -345,31 +345,32 @@ function updateRitualPhaseBadges(phase) {
 
   const hasQuestionStep = Boolean(activeSpread.requiresQuestionPrompt);
   const needsCut = activeSpread.card_count > 1;
-  const activeCls = 'whitespace-nowrap px-2.5 py-0.5 rounded bg-[#EBB844] text-[#2A160E] border border-[#4A1F12]';
-  const inactiveCls = 'whitespace-nowrap px-2.5 py-0.5 rounded bg-[#FCF4DC] text-[#523020] border border-[#8A5414]/45';
+  const activeCls = 'whitespace-nowrap px-1.5 sm:px-2.5 py-0.5 rounded bg-[#EBB844] text-[#2A160E] border border-[#4A1F12]';
+  const inactiveCls = 'whitespace-nowrap px-1.5 sm:px-2.5 py-0.5 rounded bg-[#FCF4DC] text-[#523020] border border-[#8A5414]/45';
+  const sep = '<span class="text-[#8A5414] shrink-0">-</span>';
 
   if (hasQuestionStep && needsCut) {
     bar.innerHTML = `
       <span class="${phase === 'question' ? activeCls : inactiveCls}">${t('stepperQuestion')}</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'shuffle' ? activeCls : inactiveCls}">${t('stepperShuffle')}</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'cut' ? activeCls : inactiveCls}">${t('stepperCut')}</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'draw' ? activeCls : inactiveCls}">${t('stepperDraw')}</span>
     `;
   } else if (needsCut) {
     bar.innerHTML = `
       <span class="${phase === 'shuffle' ? activeCls : inactiveCls}">${t('stepperShuffleAlt')}</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'cut' ? activeCls : inactiveCls}">${t('stepperCut')}</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'draw' ? activeCls : inactiveCls}">${t('stepperDraw')}</span>
     `;
   } else {
     bar.innerHTML = `
       <span class="${phase === 'shuffle' ? activeCls : inactiveCls}">ตั้งจิตสับไพ่</span>
-      <span class="text-[#8A5414]">—</span>
+      ${sep}
       <span class="${phase === 'draw' ? activeCls : inactiveCls}">เลือกไพ่</span>
     `;
   }
@@ -1073,8 +1074,9 @@ function updateTableProgress() {
       const nextPos = unrevealed[0].posIndex;
       const posMeta = activeSpread.positions.find((p) => p.index === nextPos);
       boardHint.textContent = `ลำดับการเปิดตามคู่มือ: ${posMeta ? `${posMeta.index}. ${posMeta.title}` : ''}`;
-      guideText.innerHTML =
-        `แตะเปิดไพ่ตามลำดับคู่มือ (<strong>${posMeta ? `ลำดับที่ ${posMeta.index}: ${posMeta.title}` : ''}</strong>) เพื่อพลิกเปิดเผยความหมาย`;
+      guideText.innerHTML = '';
+      guideText.classList.add('hidden');
+      if (guideText.parentElement) guideText.parentElement.classList.add('hidden');
       const fullBtn = document.getElementById('btn-full-reading');
   if (fullBtn) fullBtn.classList.add('hidden');
       if (summaryCta) summaryCta.classList.add('hidden');
@@ -1259,6 +1261,17 @@ function handlePlacedCardClick(posIndex) {
   preloadCardImage(placed.card);
 
   if (!placed.isRevealed) {
+    const unrevealedSorted = placedSlots
+      .filter((s) => !s.isRevealed)
+      .sort((a, b) => a.posIndex - b.posIndex);
+    const nextUnrevealed = unrevealedSorted[0];
+    if (!nextUnrevealed || nextUnrevealed.posIndex !== posIndex) {
+      const boardHint = document.getElementById('board-stage-hint');
+      if (boardHint && nextUnrevealed) {
+        boardHint.textContent = `กรุณาเปิดไพ่ตามลำดับ (เปิดใบที่ ${nextUnrevealed.posIndex} ก่อน)`;
+      }
+      return;
+    }
     placed.isRevealed = true;
     trackEvent('card_reveal', {
       spreadId: activeSpread.spread_id,
@@ -1297,6 +1310,11 @@ function revealAllAndOpenSummary() {
 }
 
 function openNextUnrevealedCard(posIndex) {
+  const unrevealedSorted = placedSlots
+    .filter((s) => !s.isRevealed)
+    .sort((a, b) => a.posIndex - b.posIndex);
+  const nextUnrevealed = unrevealedSorted[0];
+  if (!nextUnrevealed || nextUnrevealed.posIndex !== posIndex) return;
   const placed = placedSlots.find((s) => s.posIndex === posIndex);
   if (!placed) return;
   preloadCardImage(placed.card);
@@ -1384,16 +1402,8 @@ async function triggerAiInterpretation() {
           .join('')
       : `<div class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-lg px-3.5 py-2.5"><p class="font-pridi text-sm text-[#2A160E] leading-relaxed">${escapeHtml(String(result.overview || '').replace(/,/g, ''))}</p></div>`;
 
-  const modeStatusLabel =
-    result.mode === 'live'
-      ? '✦ เรียบเรียงคำทำนายเฉพาะเรื่องราวของคุณด้วย AI'
-      : '✦ สรุปคำทำนายจากตำราโคลว์ (โหมดสำรองเมื่อใช้งานออฟไลน์หรือโควตา AI เต็มชั่วคราว)';
-
   outputEl.innerHTML = `
     <div class="space-y-3.5 pt-1">
-      <p class="font-fahkwang text-[11px] text-[#4F2031]/85 bg-[#FCF4DC]/75 border border-[#8A5414]/30 rounded px-2.5 py-1">
-        ${escapeHtml(modeStatusLabel)}
-      </p>
       <div class="space-y-2">
         <h5 class="font-fahkwang text-xs uppercase tracking-wider text-[#4F2031]">✦ ภาพรวมคำทำนาย</h5>
         <div class="space-y-2">
@@ -1610,7 +1620,10 @@ function openFullReadingModal() {
       <div class="space-y-4">
         <div class="text-center space-y-1 border-b border-[#8A5414]/45 pb-3">
           <span class="font-cinzel text-xs tracking-[0.18em] uppercase text-[#4F2031]">${activeSpread.engTitle}</span>
-          <h3 class="font-charm text-2xl sm:text-3xl text-[#2A160E]">บทสรุปคำพยากรณ์: ${activeSpread.name}</h3>
+          <h3 class="font-charm text-2xl sm:text-3xl text-[#2A160E] leading-snug">
+            <span class="block">บทสรุปคำพยากรณ์</span>
+            <span class="block text-xl sm:text-2xl text-[#4F2031]">${activeSpread.name}</span>
+          </h3>
         </div>
 
         <div class="flex flex-col items-center gap-2.5 py-1">
@@ -1661,7 +1674,40 @@ function syncReadingModalOffset(modal) {
   const scrollBox = modal.querySelector('.editorial-scroll');
   if (scrollBox) {
     scrollBox.style.maxHeight = `calc(100vh - ${headerBottom + (isMobile ? 22 : 18)}px)`;
+    if (!scrollBox.dataset.boundScrollNav) {
+      scrollBox.dataset.boundScrollNav = '1';
+      scrollBox.addEventListener('scroll', updateModalScrollButtons, { passive: true });
+    }
+    requestAnimationFrame(updateModalScrollButtons);
   }
+}
+
+function updateModalScrollButtons() {
+  const modal = document.getElementById('reading-modal');
+  const scrollBox = modal ? modal.querySelector('.editorial-scroll') : null;
+  const upBtn = document.getElementById('modal-scroll-up-btn');
+  const downBtn = document.getElementById('modal-scroll-down-btn');
+  if (!scrollBox || !upBtn || !downBtn) return;
+
+  const canScroll = scrollBox.scrollHeight > scrollBox.clientHeight + 10;
+  if (!canScroll) {
+    upBtn.classList.add('hidden');
+    downBtn.classList.add('hidden');
+    return;
+  }
+
+  const atTop = scrollBox.scrollTop <= 8;
+  const atBottom = scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 8;
+  upBtn.classList.toggle('hidden', atTop);
+  downBtn.classList.toggle('hidden', atBottom);
+}
+
+function scrollReadingModal(direction) {
+  const modal = document.getElementById('reading-modal');
+  const scrollBox = modal ? modal.querySelector('.editorial-scroll') : null;
+  if (!scrollBox) return;
+  const step = Math.max(180, Math.round(scrollBox.clientHeight * 0.65));
+  scrollBox.scrollBy({ top: direction * step, behavior: 'smooth' });
 }
 
 async function loadHtml2Canvas() {
@@ -1847,9 +1893,16 @@ function initStickyCompactHeader() {
   const headerEl = document.getElementById('main-header');
   if (!headerEl) return;
 
+  let isScrolled = false;
   const handleScroll = () => {
-    if (window.scrollY > 40) headerEl.classList.add('is-scrolled');
-    else headerEl.classList.remove('is-scrolled');
+    const y = window.scrollY;
+    if (!isScrolled && y > 90) {
+      isScrolled = true;
+      headerEl.classList.add('is-scrolled');
+    } else if (isScrolled && y < 20) {
+      isScrolled = false;
+      headerEl.classList.remove('is-scrolled');
+    }
   };
 
   window.addEventListener('scroll', handleScroll, { passive: true });
@@ -1880,6 +1933,7 @@ Object.assign(window, {
   openNextUnrevealedCard,
   openFullReadingModal,
   closeReadingModal,
+  scrollReadingModal,
   handleBackdropClick,
   triggerAiInterpretation,
   toggleBgm,

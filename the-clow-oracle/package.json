@@ -1,9 +1,9 @@
 {
-  "name": "the-clow-oracle",
+  "name": "the-clow-cardcaptor-sakura",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "THE CLOW — คัมภีร์พยากรณ์ไพ่โคลว์การ์ด 52 ใบ พร้อม AI ตีความ (Cloudflare Pages)",
+  "description": "The Clow Cardcaptor Sakura — ทำนายไพ่ซากุระ",
   "scripts": {
     "dev": "npx wrangler pages dev public"
   }
