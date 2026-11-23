@@ -739,11 +739,11 @@ function updateCompatibilityHeaderUI(scanIndex = -1) {
   if (boardHint) {
     boardHint.textContent = compatFinished
       ? `คัดไพ่เสร็จสมบูรณ์ · เหลือไพ่ ${remain} ใบ (${tier.title})`
-      : 'กำลังคัดไพ่ออก...';
+      : '';
   }
   if (statusPill) {
     if (!compatFinished && remain > 0) {
-      statusPill.textContent = 'กำลังคัดไพ่ออก...';
+      statusPill.textContent = '✦ กำลังคัดไพ่ออก...';
       statusPill.classList.remove('hidden');
     } else {
       statusPill.classList.add('hidden');
@@ -799,7 +799,7 @@ function renderCompatibilityCanvas(scanIndex = -1, matchedPairIndices = new Set(
     <div class="space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2 bg-[#FCF4DC]/85 border border-[#8A5414]/40 rounded-lg px-3 py-2">
         <div class="flex flex-wrap items-center gap-2 text-xs font-fahkwang text-[#2A160E]">
-          <span id="compat-scan-pill" class="${!compatFinished ? '' : 'hidden'} px-2 py-0.5 rounded-full bg-[#FEF08A] border border-[#CA8A04] text-[#713F12]">กำลังคัดไพ่ออก...</span>
+          <span id="compat-scan-pill" class="${!compatFinished ? '' : 'hidden'} px-2.5 py-0.5 rounded-full bg-[#4F2031]/10 border border-[#4F2031]/35 text-[#4F2031]">✦ กำลังคัดไพ่ออก...</span>
           <span>เหลือไพ่ <strong id="compat-remain-count" class="text-[#4F2031]">${remain}</strong> / 52 ใบ</span>
           <span class="text-[#523020]">(คัดออกแล้ว <span id="compat-pairs-count">${compatEliminatedPairs}</span> คู่)</span>
         </div>
@@ -838,11 +838,11 @@ function highlightCompatCardNodes(scanIndex, matchedPairIndices = new Set()) {
   if (!row) return;
   const nodes = Array.from(row.querySelectorAll('.compat-card-item'));
   nodes.forEach((node, idx) => {
-    node.classList.remove('ring-2', 'ring-[#FACC15]', 'bg-[#FEF08A]/40', '-translate-y-2.5', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-lg', 'shadow-md');
+    node.classList.remove('ring-2', 'ring-[#9F1239]', 'ring-[#B47B1E]', 'bg-[#F4DC9C]/55', '-translate-y-2.5', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-lg', 'shadow-md');
     if (matchedPairIndices.has(idx)) {
-      node.classList.add('ring-2', 'ring-[#FACC15]', 'bg-[#FEF08A]/40', '-translate-y-2.5', 'scale-105', 'z-30', 'shadow-lg');
+      node.classList.add('ring-2', 'ring-[#9F1239]', 'bg-[#F4DC9C]/55', '-translate-y-2.5', 'scale-105', 'z-30', 'shadow-lg');
     } else if (idx === scanIndex) {
-      node.classList.add('ring-2', 'ring-[#FACC15]', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-md');
+      node.classList.add('ring-2', 'ring-[#B47B1E]', '-translate-y-1.5', 'scale-105', 'z-30', 'shadow-md');
     }
   });
   updateCompatibilityHeaderUI(scanIndex);
@@ -969,8 +969,8 @@ function openCompatibilitySummaryModal() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
           <p class="font-fahkwang text-[11px] text-[#4F2031]">✦ สาเหตุหรืออุปสรรค</p>
-          <div class="flex items-start gap-3">
-            <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
+          <div class="flex items-center gap-3">
+            <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${leftCard.name}</p>
               <p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>
@@ -983,8 +983,8 @@ function openCompatibilitySummaryModal() {
             ? `
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
           <p class="font-fahkwang text-[11px] text-[#8A5414]">✦ คำแนะนำการปรับตัว</p>
-          <div class="flex items-start gap-3">
-            <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
+          <div class="flex items-center gap-3">
+            <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${rightCard.name}</p>
               <p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>
@@ -1125,6 +1125,16 @@ function initSpreadNavigation() {
           <span class="px-2 py-0.5 rounded text-[11px] font-fahkwang bg-[#F8DF94] text-[#2A160E] border border-[#4A1F12]/70">${spread.card_count} ${isEn ? (spread.card_count === 1 ? 'Card' : 'Cards') : 'ใบ'}</span>
         </div>
         <h2 class="font-charm text-xl sm:text-2xl text-[#2A160E] group-hover:text-[#4F2031] transition-colors">${getSpreadName(spread)}</h2>
+        ${
+          !isEn && Array.isArray(spread.topicTags) && spread.topicTags.length > 0
+            ? `<div class="flex flex-wrap gap-1 pt-0.5">${spread.topicTags
+                .map(
+                  (tag) =>
+                    `<span class="px-1.5 py-0.5 rounded text-[10px] font-fahkwang bg-[#F4DC9C]/65 text-[#4F2031] border border-[#8A5414]/35">${tag}</span>`
+                )
+                .join('')}</div>`
+            : ''
+        }
         <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">${getSpreadPurpose(spread)}</p>
         ${
           !isEn && spread.ritualNoticeBody
@@ -2023,17 +2033,9 @@ function openNextUnrevealedCard(posIndex) {
  * =========================================================================
  */
 function buildAiOraclePanelHTML() {
-  const isDaily = activeSpread && activeSpread.spread_id === 'daily_single';
-
   return `
-    <div id="ai-oracle-section" class="ai-oracle-panel rounded-xl p-4 sm:p-5 space-y-3 text-left">
-      <div class="flex items-center gap-2 border-b border-[#4F2031]/20 pb-2">
-        <span class="w-5 h-5 rounded-full bg-[#4F2031] text-[#F8DF94] text-[10px] flex items-center justify-center shrink-0">✦</span>
-        <h4 class="font-fahkwang text-xs sm:text-sm text-[#4F2031] font-medium">
-          ${isDaily ? 'คำทำนายและแนวทางประจำวัน' : 'บทสรุปคำทำนาย'}
-        </h4>
-      </div>
-      <div id="ai-oracle-output" class="hidden pt-1"></div>
+    <div id="ai-oracle-section" class="space-y-3 text-left">
+      <div id="ai-oracle-output" class="hidden"></div>
     </div>
   `;
 }
@@ -2076,30 +2078,53 @@ async function triggerAiInterpretation() {
     : String(result.advice || '').replace(/^ไพ่เหล่านี้ต้องการเตือนคุณว่า\s*/, '').trim();
   const cleanAdviceText = rawAdviceText.replace(/,/g, '');
 
+  const isSingleDaily = activeSpread && activeSpread.spread_id === 'daily_single';
   const overviewBlocks =
     Array.isArray(result.connections) && result.connections.length > 0
       ? result.connections
           .map((item, idx) => {
             const stepNum = item.positionIndex || idx + 1;
-            const titleText = item.positionTitle ? ` · ${item.positionTitle}` : '';
+            const titleOnly = item.positionTitle || '';
+            const headerLabel = isSingleDaily
+              ? `✦ ${titleOnly || 'สารหลักประจำวัน'}`
+              : `✦ ใบที่ ${stepNum}${titleOnly ? ` · ${titleOnly}` : ''}`;
             const insightText = String(item.insight || '').replace(/,/g, '').trim();
+            const matchedSlot = placedSlots.find((s) => Number(s.posIndex) === Number(stepNum));
+            const cardThumbHtml =
+              matchedSlot && matchedSlot.card && !isSingleDaily
+                ? `<div class="w-16 sm:w-[76px] shrink-0" data-card-front-slot="${matchedSlot.card.id}">${buildMinimalCardFrontHTML(matchedSlot.card)}</div>`
+                : '';
+            const cardHeaderHtml = isSingleDaily
+              ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">✦ ${escapeHtml(titleOnly || 'สารหลักประจำวัน')}</div>`
+              : matchedSlot && matchedSlot.card
+                ? `<div class="space-y-0.5 leading-snug">
+                     <div class="flex flex-wrap items-baseline gap-x-1.5 text-[11px] sm:text-xs">
+                       <span class="font-fahkwang text-[#8A5414]">✦ ลำดับที่ ${stepNum}</span>
+                       <span class="font-cinzel font-bold text-[#2A160E]">${escapeHtml(matchedSlot.card.name)}</span>
+                       <span class="font-charm text-xs sm:text-sm text-[#4F2031]">(${escapeHtml(matchedSlot.card.thaiName)})</span>
+                     </div>
+                     ${titleOnly ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">${escapeHtml(titleOnly)}</div>` : ''}
+                   </div>`
+                : `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">${escapeHtml(headerLabel)}</div>`;
             return `
-              <div class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-lg px-3.5 py-2.5 space-y-1">
-                <div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">ใบที่ ${stepNum}${escapeHtml(titleText)}</div>
-                <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(insightText)}</p>
+              <div class="bg-[#FCF4DC]/80 border border-[#8A5414]/45 rounded-lg p-3 sm:p-3.5">
+                <div class="flex items-center gap-3 sm:gap-3.5">
+                  ${cardThumbHtml}
+                  <div class="flex-1 min-w-0 space-y-1 text-left">
+                    ${cardHeaderHtml}
+                    <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(insightText)}</p>
+                  </div>
+                </div>
               </div>
             `;
           })
           .join('')
-      : `<div class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-lg px-3.5 py-2.5"><p class="font-pridi text-sm text-[#2A160E] leading-relaxed">${escapeHtml(String(result.overview || '').replace(/,/g, ''))}</p></div>`;
+      : `<div class="bg-[#FCF4DC]/80 border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5"><p class="font-pridi text-sm text-[#2A160E] leading-relaxed">${escapeHtml(String(result.overview || '').replace(/,/g, ''))}</p></div>`;
 
   outputEl.innerHTML = `
-    <div class="space-y-3.5 pt-1">
-      <div class="space-y-2">
-        <h5 class="font-fahkwang text-xs uppercase tracking-wider text-[#4F2031]">✦ ภาพรวมคำทำนาย</h5>
-        <div class="space-y-2">
-          ${overviewBlocks}
-        </div>
+    <div class="space-y-3">
+      <div class="space-y-2.5">
+        ${overviewBlocks}
       </div>
 
       ${
@@ -2135,24 +2160,17 @@ function openSingleCardModal(posIndex) {
   const body = document.getElementById('modal-reading-body');
   body.innerHTML = `
     <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 pt-1">
-      <!-- ชื่อไพ่และคำแปลด้านบนรูปไพ่สำหรับจอมือถือ -->
-      <div class="sm:hidden text-center space-y-0.5 w-full">
-        <span class="font-cinzel text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-        <h3 class="font-charm text-xl text-[#4F2031]">${card.thaiName}</h3>
-      </div>
-
-      <div class="w-48 sm:w-56 md:w-64 h-auto shrink-0 mx-auto sm:mx-0 hero-float-2" data-card-front-slot="${card.id}">
-        ${buildMinimalCardFrontHTML(card)}
+      <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-2">
+        <div class="w-44 sm:w-52 md:w-56 h-auto hero-float-2" data-card-front-slot="${card.id}">
+          ${buildMinimalCardFrontHTML(card)}
+        </div>
+        <div class="text-center space-y-0.5">
+          <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
+          <h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>
+        </div>
       </div>
 
       <div class="flex-1 space-y-3.5 text-left w-full">
-        <div class="hidden sm:block">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="font-cinzel text-lg sm:text-xl text-[#2A160E]">${card.name}</span>
-          </div>
-          <h3 class="font-charm text-2xl sm:text-3xl text-[#4F2031] mt-0.5">${card.thaiName}</h3>
-        </div>
-
         <div id="single-card-ai-box" class="ai-oracle-panel rounded-lg p-3.5 sm:p-4 space-y-2 text-left">
           <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
             <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">✦ ลำดับที่ ${posMeta.index} · ${posMeta.title}</span>
@@ -2265,49 +2283,23 @@ function openFullReadingModal() {
     body.innerHTML = `
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pt-1">
-          <!-- ชื่อไพ่และคำแปลด้านบนรูปไพ่สำหรับจอมือถือ -->
-          <div class="sm:hidden text-center space-y-0.5 w-full">
-            <span class="font-cinzel text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-            <h3 class="font-charm text-xl text-[#4F2031]">${card.thaiName}</h3>
-          </div>
-
-          <div class="w-36 sm:w-44 h-auto shrink-0 mx-auto sm:mx-0" data-card-front-slot="${card.id}">
-            ${buildMinimalCardFrontHTML(card)}
+          <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-2">
+            <div class="w-36 sm:w-44 h-auto" data-card-front-slot="${card.id}">
+              ${buildMinimalCardFrontHTML(card)}
+            </div>
+            <div class="text-center space-y-0.5">
+              <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
+              <h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>
+            </div>
           </div>
 
           <div class="flex-1 space-y-3 text-left w-full">
-            <div class="hidden sm:block">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="font-cinzel text-lg sm:text-xl text-[#2A160E]">${card.name}</span>
-              </div>
-              <h3 class="font-charm text-2xl sm:text-3xl text-[#4F2031] mt-0.5">${card.thaiName}</h3>
-            </div>
-
-            <div class="flex flex-wrap gap-1.5">
-              ${card.keywords.map((kw) => `<span class="px-2.5 py-0.5 rounded text-xs font-fahkwang bg-[#FCF4DC] border border-[#8A5414]/55 text-[#2A160E]">✦ ${kw}</span>`).join('')}
-            </div>
-
             ${buildAiOraclePanelHTML()}
           </div>
         </div>
       </div>
     `;
   } else {
-    const mid = Math.ceil(sortedSlots.length / 2);
-    const row1 = sortedSlots.slice(0, mid);
-    const row2 = sortedSlots.slice(mid);
-    const stripCardWidth = sortedSlots.length >= 7 ? 'w-14 sm:w-20 md:w-24' : 'w-20 sm:w-24 md:w-28';
-    const renderStripRow = (slots) =>
-      slots
-        .map(
-          (slot) => `
-          <div class="${stripCardWidth} shrink-0 hero-float-2" data-card-front-slot="${slot.card.id}" title="${slot.card.name} — ${slot.card.thaiName}">
-            ${buildMinimalCardFrontHTML(slot.card)}
-          </div>
-        `
-        )
-        .join('');
-
     body.innerHTML = `
       <div class="space-y-4">
         <div class="text-center space-y-1 border-b border-[#8A5414]/45 pb-3">
@@ -2316,10 +2308,6 @@ function openFullReadingModal() {
             <span class="block">บทสรุปคำพยากรณ์</span>
             <span class="block text-xl sm:text-2xl text-[#4F2031]">${activeSpread.name}</span>
           </h3>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5">
-          ${renderStripRow(sortedSlots)}
         </div>
 
         ${buildAiOraclePanelHTML()}
