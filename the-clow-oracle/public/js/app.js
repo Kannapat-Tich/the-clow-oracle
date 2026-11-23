@@ -5,6 +5,7 @@
 
 import { SPREADS_DATA } from '../data/spreads.js';
 import { CARDS_DATA } from '../data/cards.js';
+import { COMPATIBILITY_READINGS } from '../data/compatibility-readings.js';
 import { getCardBackUrl, getCardFrontUrl, getMagicCircleUrl } from '../data/assets.config.js';
 import {
   updateBgmUI,
@@ -382,7 +383,14 @@ function resetCurrentSpreadSession() {
   userSecretQuestion = '';
   clearAiReadingCache();
   const qInput = document.getElementById('user-question-input');
-  if (qInput) qInput.value = '';
+  if (qInput) {
+    qInput.value = '';
+    if (!qInput.dataset.boundCounter) {
+      qInput.dataset.boundCounter = '1';
+      qInput.addEventListener('input', updateQuestionCharCounter);
+    }
+    updateQuestionCharCounter();
+  }
 
   if (activeSpread.requiresQuestionPrompt) {
     enterQuestionStage();
@@ -439,17 +447,38 @@ function updateQuestionAiStatusNote() {
     const remainMs = until - Date.now();
     if (remainMs > 0) {
       const mins = Math.max(1, Math.ceil(remainMs / 60000));
-      noteEl.innerHTML = `✦ ขณะนี้โควตา <strong>AI วิเคราะห์เรื่องราว</strong> เต็มชั่วคราว (ใช้งานได้อีกครั้งในอีกประมาณ <strong>${mins} นาที</strong>) — คุณยังสามารถเปิดไพ่และรับคำทำนายจาก <strong>ตำราโคลว์</strong> ได้ตามปกติค่ะ`;
+      noteEl.innerHTML = `✦ ขณะนี้โควตาผู้ช่วยตีความเต็มชั่วคราว (ใช้งานได้อีกครั้งในอีกประมาณ <strong>${mins} นาที</strong>) — ยังสามารถเปิดไพ่และรับคำทำนายจาก <strong>ตำราไพ่โคลว์</strong> ได้ตามปกติ`;
+      noteEl.classList.remove('hidden');
       return;
     }
   } catch (_) {}
-  noteEl.innerHTML = t('aiNoteDefault');
+  noteEl.innerHTML = '';
+  noteEl.classList.add('hidden');
+}
+
+function updateQuestionCharCounter() {
+  const qInput = document.getElementById('user-question-input');
+  const counterEl = document.getElementById('user-question-counter');
+  if (!qInput || !counterEl) return;
+  const len = qInput.value.length;
+  const max = Number(qInput.getAttribute('maxlength')) || 500;
+  counterEl.textContent = getCurrentLang() === 'en' ? `${len} / ${max} chars` : `${len} / ${max} ตัวอักษร`;
+  counterEl.classList.toggle('text-[#9F1239]', len >= max - 40);
+  counterEl.classList.toggle('text-[#8A5414]', len < max - 40);
 }
 
 function skipQuestionStep() {
   userSecretQuestion = '';
   const qInput = document.getElementById('user-question-input');
-  if (qInput) qInput.value = '';
+  if (qInput) {
+    qInput.value = '';
+    if (!qInput.dataset.boundCounter) {
+      qInput.dataset.boundCounter = '1';
+      qInput.addEventListener('input', updateQuestionCharCounter);
+    }
+    updateQuestionCharCounter();
+  }
+  updateQuestionCharCounter();
   enterRitualShuffleStage();
 }
 
@@ -547,7 +576,7 @@ function proceedFromShuffle() {
   if (isAnimatingRitual) return;
   if (shuffleCount < 1) {
     const sub = document.getElementById('deck-instruction-sub');
-    if (sub) sub.textContent = 'กรุณาแตะสับไพ่อย่างน้อย 1 ครั้งก่อนดำเนินการต่อ';
+    if (sub) sub.textContent = 'ลองแตะสับไพ่อย่างน้อย 1 ครั้งเพื่อรวบรวมสมาธิก่อนเริ่มพิธีกรรม';
     return;
   }
   if (activeSpread.card_count > 1) enterDeckCutStage();
@@ -642,39 +671,44 @@ function getCompatibilityTier(remainingCount) {
     return {
       title: 'เข้ากันได้ดีมาก',
       range: '0 – 10 ใบ',
+      stars: 5,
       desc: 'ความเข้ากันได้อยู่ในระดับยอดเยี่ยม ความสัมพันธ์ราบรื่นและเกื้อหนุนกันอย่างเป็นธรรมชาติ',
-      badgeCls: 'text-[#166534] bg-[#DCFCE7] border-[#86EFAC]'
+      badgeCls: 'text-[#4A2508] bg-[#F8E7B4]/90 border-[#B47B1E]/75'
     };
   }
   if (remainingCount <= 20) {
     return {
       title: 'เข้ากันได้ค่อนข้างดี',
       range: '11 – 20 ใบ',
+      stars: 4,
       desc: 'มีพลังบวกและความเข้าใจที่ดีต่อกัน หากเปิดใจสื่อสารจะยิ่งสนิทและมั่นคงมากขึ้น',
-      badgeCls: 'text-[#1E40AF] bg-[#DBEAFE] border-[#93C5FD]'
+      badgeCls: 'text-[#3B2A14] bg-[#F4E9C9]/90 border-[#8A6D3B]/70'
     };
   }
   if (remainingCount <= 30) {
     return {
       title: 'เข้ากันได้ระดับปานกลาง',
       range: '21 – 30 ใบ',
+      stars: 3,
       desc: 'ความสัมพันธ์อยู่ในเกณฑ์ปกติ มีทั้งจุดที่ลงตัวและจุดที่ต้องค่อยๆ ปรับจูนเข้าหากัน',
-      badgeCls: 'text-[#854D0E] bg-[#FEF9C3] border-[#FDE047]'
+      badgeCls: 'text-[#4A2B15] bg-[#F5E6C4]/85 border-[#9A6B2F]/65'
     };
   }
   if (remainingCount <= 40) {
     return {
       title: 'เข้ากันได้ค่อนข้างน้อย',
       range: '31 – 40 ใบ',
+      stars: 2,
       desc: 'อาจมีมุมมองหรือจังหวะชีวิตที่ต่างกันบ้าง ควรใช้ความใจเย็นและหลีกเลี่ยงการด่วนตัดสิน',
-      badgeCls: 'text-[#9A3412] bg-[#FFEDD5] border-[#FDBA74]'
+      badgeCls: 'text-[#5C2415] bg-[#F2DFC8]/90 border-[#9A4B2E]/65'
     };
   }
   return {
     title: 'ไม่ค่อยเข้ากันนัก',
     range: '41 – 50 ใบ',
+    stars: 1,
     desc: 'มีแรงต้านหรือความต่างค่อนข้างสูง ต้องอาศัยความอดทน ความยืดหยุ่น และการสื่อสารที่นุ่มนวลเป็นพิเศษ',
-    badgeCls: 'text-[#991B1B] bg-[#FEE2E2] border-[#FCA5A5]'
+    badgeCls: 'text-[#4F2031] bg-[#EFE0DF]/90 border-[#7A3548]/65'
   };
 }
 
@@ -927,18 +961,20 @@ function openCompatibilitySummaryModal() {
   const tier = getCompatibilityTier(remain);
   const leftCard = compatCards.length > 0 ? compatCards[0] : null;
   const rightCard = compatCards.length > 1 ? compatCards[compatCards.length - 1] : leftCard;
+  const leftCauseText = (leftCard && COMPATIBILITY_READINGS[leftCard.id]?.cause) || (leftCard ? leftCard.meaning : '');
+  const rightAdviceText = (rightCard && COMPATIBILITY_READINGS[rightCard.id]?.advice) || (rightCard ? rightCard.warning : '');
 
   const keyCardsHtml = leftCard
     ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
-          <p class="font-fahkwang text-[11px] text-[#4F2031]">✦ ไพ่ใบซ้ายสุด · สาเหตุหรืออุปสรรค</p>
+          <p class="font-fahkwang text-[11px] text-[#4F2031]">✦ สาเหตุหรืออุปสรรค</p>
           <div class="flex items-start gap-3">
             <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${leftCard.name}</p>
               <p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>
-              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${leftCard.meaning}</p>
+              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${leftCauseText}</p>
             </div>
           </div>
         </div>
@@ -946,13 +982,13 @@ function openCompatibilitySummaryModal() {
           rightCard
             ? `
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
-          <p class="font-fahkwang text-[11px] text-[#8A5414]">✦ ไพ่ใบขวาสุด · คำแนะนำการปรับตัว</p>
+          <p class="font-fahkwang text-[11px] text-[#8A5414]">✦ คำแนะนำการปรับตัว</p>
           <div class="flex items-start gap-3">
             <div class="w-16 shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${rightCard.name}</p>
               <p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>
-              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${rightCard.warning}</p>
+              <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${rightAdviceText}</p>
             </div>
           </div>
         </div>`
@@ -960,7 +996,13 @@ function openCompatibilitySummaryModal() {
         }
       </div>
     `
-    : `<div class="bg-[#DCFCE7]/70 border border-[#86EFAC] rounded-lg p-3.5 text-center font-pridi text-sm text-[#166534]">ตัดคู่ไพ่ครบทุกใบ ไม่มีอุปสรรคหลงเหลือ ความสัมพันธ์ราบรื่นและสอดคล้องกันอย่างยอดเยี่ยม</div>`;
+    : `<div class="bg-[#F8E7B4]/85 border border-[#B47B1E]/70 rounded-lg p-3.5 text-center font-pridi text-sm text-[#4A2508]">ตัดคู่ไพ่ครบทุกใบ ไม่มีอุปสรรคหลงเหลือ ความสัมพันธ์ราบรื่นและสอดคล้องกันอย่างยอดเยี่ยม</div>`;
+
+  const starMeterHtml = Array.from({ length: 5 }, (_, idx) =>
+    idx < (tier.stars || 3)
+      ? '<span class="text-[#B47B1E]">✦</span>'
+      : '<span class="text-[#8A5414]/25">✦</span>'
+  ).join('');
 
   body.innerHTML = `
     <div class="space-y-4">
@@ -972,10 +1014,11 @@ function openCompatibilitySummaryModal() {
         </h3>
       </div>
 
-      <div class="rounded-xl border p-4 text-center space-y-1.5 ${tier.badgeCls}">
-        <p class="font-fahkwang text-xs">เหลือไพ่ทั้งหมด <strong>${remain} ใบ</strong> (ช่วง ${tier.range})</p>
+      <div class="rounded-xl border p-4 text-center space-y-1.5 shadow-inner ${tier.badgeCls}">
+        <div class="flex items-center justify-center gap-1.5 text-sm tracking-widest" aria-label="ระดับความเข้ากัน ${tier.stars} จาก 5">${starMeterHtml}</div>
         <p class="font-charm text-2xl font-bold">${tier.title}</p>
-        <p class="font-pridi text-xs sm:text-sm leading-relaxed">${tier.desc}</p>
+        <p class="font-fahkwang text-[11px] opacity-80">เหลือไพ่ทั้งหมด <strong>${remain} ใบ</strong> (ช่วง ${tier.range})</p>
+        <p class="font-pridi text-xs sm:text-sm leading-relaxed pt-0.5">${tier.desc}</p>
       </div>
 
       ${keyCardsHtml}
@@ -1083,6 +1126,15 @@ function initSpreadNavigation() {
         </div>
         <h2 class="font-charm text-xl sm:text-2xl text-[#2A160E] group-hover:text-[#4F2031] transition-colors">${getSpreadName(spread)}</h2>
         <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">${getSpreadPurpose(spread)}</p>
+        ${
+          !isEn && spread.ritualNoticeBody
+            ? `
+        <div class="mt-1.5 rounded-md bg-[#F4DC9C]/45 border border-[#8A5414]/35 px-2.5 py-1.5 text-[11px] sm:text-xs font-pridi text-[#4F2031] leading-relaxed">
+          <span class="font-fahkwang text-[10px] sm:text-[11px] text-[#8A5414] block mb-0.5">☽ ${spread.ritualNoticeTitle || 'ตั้งจิตก่อนเริ่มทำนาย'}</span>
+          <span>${spread.ritualNoticeBody}</span>
+        </div>`
+            : ''
+        }
       </div>
       <div class="mt-3 pt-2 sm:mt-3.5 sm:pt-2.5 border-t border-[#8A5414]/45 flex items-center justify-between text-xs font-fahkwang text-[#2A160E]">
         <span>${isEn ? 'Open Grimoire & Shuffle' : 'เปิดตำราและสับไพ่'}</span>
@@ -1241,14 +1293,14 @@ function enterFanDrawPhase() {
   triggerPageFade(deckPanel);
   scrollToTopSmooth();
 
-  // แสดงป็อปอัปแจ้งเตือนทันทีเมื่อกรีดไพ่คว่ำใบสุดท้ายเสร็จ
-  const totalDealDurationMs = Math.max(0, (shuffledDeck.length - 1) * 28 + 460);
+  // แสดงป็อปอัปแจ้งเตือนช่วงกลางค่อนท้ายของการกรีดไพ่ (ไม่ต้องรอจนแอนิเมชันใบสุดท้ายจบ)
+  const earlyNoticeDelayMs = Math.max(300, Math.round((shuffledDeck.length - 1) * 18));
   drawNoticeTimer = setTimeout(() => {
     drawNoticeTimer = null;
     if (ritualPhase === 'draw' && placedSlots.length < (activeSpread ? activeSpread.card_count : 0)) {
       openDrawNoticeModal();
     }
-  }, totalDealDurationMs);
+  }, earlyNoticeDelayMs);
 }
 
 function computeBalancedDeckRows(totalCards, containerWidth) {
@@ -1566,7 +1618,7 @@ function applySpreadCanvasZoom() {
 }
 
 function adjustSpreadZoom(delta) {
-  spreadCanvasZoom = Math.min(1.5, Math.max(0.6, Math.round((spreadCanvasZoom + delta) * 100) / 100));
+  spreadCanvasZoom = Math.min(1.5, Math.max(0.2, Math.round((spreadCanvasZoom + delta) * 100) / 100));
   applySpreadCanvasZoom();
 }
 
@@ -1614,7 +1666,7 @@ function bindBoardCanvasInteractions() {
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.hypot(dx, dy);
         const nextZoom = pinchStartZoom * (dist / pinchStartDist);
-        spreadCanvasZoom = Math.min(1.5, Math.max(0.6, Math.round(nextZoom * 100) / 100));
+        spreadCanvasZoom = Math.min(1.5, Math.max(0.2, Math.round(nextZoom * 100) / 100));
         applySpreadCanvasZoom();
       }
     },
@@ -1884,7 +1936,7 @@ function handlePlacedCardClick(posIndex) {
     const remain = activeSpread.card_count - placedSlots.length;
     const guideText = document.getElementById('board-ritual-guide-text');
     const boardHint = document.getElementById('board-stage-hint');
-    const msg = `✦ กรุณาเลือกไพ่ให้ครบทั้ง ${activeSpread.card_count} ใบก่อน จึงจะเปิดอ่านคำทำนายได้ค่ะ (ยังขาดอีก ${remain} ใบ)`;
+    const msg = `✦ เลือกไพ่ให้ครบทั้ง ${activeSpread.card_count} ใบก่อน แล้วค่อยเปิดรับสารจากหน้าไพ่ (ยังขาดอีก ${remain} ใบ)`;
     if (guideText) guideText.innerHTML = `<strong class="text-[#4F2031]">${msg}</strong>`;
     if (boardHint) boardHint.textContent = `เลือกไพ่ให้ครบก่อนเปิด (ขาดอีก ${remain} ใบ)`;
     return;
@@ -1902,7 +1954,7 @@ function handlePlacedCardClick(posIndex) {
     if (!nextUnrevealed || nextUnrevealed.posIndex !== posIndex) {
       const boardHint = document.getElementById('board-stage-hint');
       if (boardHint && nextUnrevealed) {
-        boardHint.textContent = `กรุณาเปิดไพ่ตามลำดับ (เปิดใบที่ ${nextUnrevealed.posIndex} ก่อน)`;
+        boardHint.textContent = `ลองเปิดไพ่ทีละใบตามลำดับ (เริ่มที่ใบที่ ${nextUnrevealed.posIndex} ก่อน)`;
       }
       return;
     }
@@ -1944,13 +1996,18 @@ function revealAllAndOpenSummary() {
 }
 
 function openNextUnrevealedCard(posIndex) {
+  const placed = placedSlots.find((s) => s.posIndex === posIndex);
+  if (!placed) return;
+  if (placed.isRevealed) {
+    focusedBoardIdx = posIndex;
+    openSingleCardModal(posIndex);
+    return;
+  }
   const unrevealedSorted = placedSlots
     .filter((s) => !s.isRevealed)
     .sort((a, b) => a.posIndex - b.posIndex);
   const nextUnrevealed = unrevealedSorted[0];
   if (!nextUnrevealed || nextUnrevealed.posIndex !== posIndex) return;
-  const placed = placedSlots.find((s) => s.posIndex === posIndex);
-  if (!placed) return;
   preloadCardImage(placed.card);
   placed.isRevealed = true;
   focusedBoardIdx = posIndex;
@@ -2049,7 +2106,7 @@ async function triggerAiInterpretation() {
         cleanAdviceText
           ? `
         <div class="bg-[#8F5B6E]/12 border-l-4 border-[#4F2031] rounded-r-md px-3.5 py-2.5 space-y-1">
-          <h5 class="font-fahkwang text-xs text-[#4F2031]">☽ ไพ่เหล่านี้ต้องการเตือนคุณว่า</h5>
+          <h5 class="font-fahkwang text-xs text-[#4F2031]">☽ สารนำทางจากไพ่</h5>
           <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanAdviceText)}</p>
         </div>
       `
@@ -2059,7 +2116,7 @@ async function triggerAiInterpretation() {
       ${
         result.closing
           ? `
-        <p class="font-charm text-base sm:text-lg text-[#4F2031] text-center pt-1">
+        <p id="reading-closing-quote" class="font-charm text-[13px] sm:text-[14px] text-[#4F2031] text-center pt-0.5 leading-relaxed">
           “${escapeHtml(result.closing)}”
         </p>
       `
@@ -2089,11 +2146,6 @@ function openSingleCardModal(posIndex) {
       </div>
 
       <div class="flex-1 space-y-3.5 text-left w-full">
-        <div class="bg-[#F4DC9C]/80 border border-[#8A5414]/60 rounded-lg px-4 py-2.5">
-          <span class="font-fahkwang text-xs text-[#4F2031]">ลำดับที่ ${posMeta.index} · ${posMeta.title}</span>
-          <p class="font-pridi text-xs text-[#523020] mt-0.5">${posMeta.meaning}</p>
-        </div>
-
         <div class="hidden sm:block">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-cinzel text-lg sm:text-xl text-[#2A160E]">${card.name}</span>
@@ -2101,13 +2153,10 @@ function openSingleCardModal(posIndex) {
           <h3 class="font-charm text-2xl sm:text-3xl text-[#4F2031] mt-0.5">${card.thaiName}</h3>
         </div>
 
-        <div class="flex flex-wrap gap-1.5">
-          ${card.keywords.map((kw) => `<span class="px-2.5 py-0.5 rounded text-xs font-fahkwang bg-[#FCF4DC] border border-[#8A5414]/55 text-[#2A160E]">✦ ${kw}</span>`).join('')}
-        </div>
-
-        <div id="single-card-ai-box" class="ai-oracle-panel rounded-lg p-3.5 space-y-2 text-left">
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-fahkwang text-xs text-[#4F2031]">✦ คำทำนายเชื่อมโยงกับตำแหน่งและเรื่องของคุณ</span>
+        <div id="single-card-ai-box" class="ai-oracle-panel rounded-lg p-3.5 sm:p-4 space-y-2 text-left">
+          <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
+            <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">✦ ลำดับที่ ${posMeta.index} · ${posMeta.title}</span>
+            <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${posMeta.meaning}</p>
           </div>
           <p class="ai-loading-pulse font-pridi text-xs text-[#523020]">
             ☽ กำลังจัดเตรียมคำทำนายเฉพาะตำแหน่งนี้...
@@ -2115,7 +2164,7 @@ function openSingleCardModal(posIndex) {
         </div>
 
         <div class="bg-[#8F5B6E]/15 border-l-4 border-[#4F2031] rounded-r-md px-4 py-3">
-          <h4 class="font-fahkwang text-xs text-[#4F2031]">☽ ไพ่ต้องการเตือนคุณว่า</h4>
+          <h4 class="font-fahkwang text-xs text-[#4F2031]">☽ สารนำทางจากไพ่</h4>
           <p class="font-pridi text-xs sm:text-sm text-[#2A160E] mt-1 leading-relaxed">${card.warning}</p>
         </div>
       </div>
@@ -2125,34 +2174,37 @@ function openSingleCardModal(posIndex) {
   const footerBar = document.getElementById('reading-modal-footer-bar');
   const singleFooterActions = document.getElementById('reading-modal-footer-actions');
   if (singleFooterActions && footerBar) {
+    const isMulti = activeSpread && activeSpread.card_count > 1 && placedSlots.length >= activeSpread.card_count;
     const unrevealed = placedSlots
       .filter((s) => !s.isRevealed)
       .sort((a, b) => a.posIndex - b.posIndex);
-    const allRevealedMulti =
-      activeSpread &&
-      activeSpread.card_count > 1 &&
-      placedSlots.length >= activeSpread.card_count &&
-      unrevealed.length === 0;
 
-    if (unrevealed.length > 0 && activeSpread && activeSpread.card_count > 1) {
-      const nextSlot = unrevealed[0];
+    if (isMulti) {
+      const curPos = Number(posIndex);
+      const hasPrev = curPos > 1;
+      const hasNext = curPos < activeSpread.card_count;
+      const prevBtnHtml = hasPrev
+        ? `<button onclick="openSingleCardModal(${curPos - 1})" class="btn-vintage-secondary px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">← ไพ่ก่อนหน้า</button>`
+        : `<button type="button" disabled aria-disabled="true" class="bg-[#D6D3CD] text-[#7A756D] border border-[#B8B3AA] cursor-not-allowed opacity-85 px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">← ไพ่ก่อนหน้า</button>`;
+      const nextBtnHtml = hasNext
+        ? `<button onclick="openNextUnrevealedCard(${curPos + 1})" class="btn-vintage-primary px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">ไพ่ลำดับถัดไป (${curPos + 1}) →</button>`
+        : `<button onclick="openFullReadingModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">✦ ดูบทสรุปคำทำนาย</button>`;
+      const summarySubBtn =
+        unrevealed.length > 0
+          ? `<button onclick="revealAllAndOpenSummary()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">ดูบทสรุปคำทำนาย</button>`
+          : hasNext
+            ? `<button onclick="openFullReadingModal()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">ดูบทสรุปคำทำนาย</button>`
+            : '';
+
       footerBar.classList.remove('hidden');
       singleFooterActions.innerHTML = `
-        <div class="flex flex-col items-end gap-2">
-          <button onclick="openNextUnrevealedCard(${nextSlot.posIndex})" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-            เปิดไพ่ใบถัดไป (ลำดับที่ ${nextSlot.posIndex}) →
-          </button>
-          <button onclick="revealAllAndOpenSummary()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">
-            ดูบทสรุปคำทำนาย
-          </button>
+        <div class="w-full flex items-start justify-between gap-2">
+          <div class="shrink-0">${prevBtnHtml}</div>
+          <div class="flex flex-col items-end gap-1.5">
+            ${nextBtnHtml}
+            ${summarySubBtn}
+          </div>
         </div>
-      `;
-    } else if (allRevealedMulti) {
-      footerBar.classList.remove('hidden');
-      singleFooterActions.innerHTML = `
-        <button onclick="openFullReadingModal()" class="btn-vintage-plum px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-          ✦ ดูบทสรุปคำทำนาย
-        </button>
       `;
     } else {
       footerBar.classList.add('hidden');
@@ -2188,9 +2240,14 @@ async function loadSingleCardAiInsight(posIndex) {
     ? conn.detailInsight || conn.insight
     : result.overview;
 
+  const posMeta = activeSpread.positions.find((p) => Number(p.index) === Number(posIndex));
+  const headerTitle = posMeta ? `✦ ลำดับที่ ${posMeta.index} · ${posMeta.title}` : `✦ ลำดับที่ ${posIndex}`;
+  const headerSub = posMeta && posMeta.meaning ? `<p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${escapeHtml(posMeta.meaning)}</p>` : '';
+
   box.innerHTML = `
-    <div class="flex items-center justify-between gap-2">
-      <span class="font-fahkwang text-xs text-[#4F2031]">✦ คำทำนายตามตำแหน่งนี้</span>
+    <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
+      <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">${escapeHtml(headerTitle)}</span>
+      ${headerSub}
     </div>
     <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(insightText || '')}</p>
   `;

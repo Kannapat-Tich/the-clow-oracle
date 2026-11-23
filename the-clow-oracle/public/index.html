@@ -26,7 +26,7 @@
   <link rel="preload" as="image" href="./assets/cards/sword.webp" />
   <link rel="preload" as="image" href="./assets/ui/clow_magic_circle.webp" />
 
-  <link rel="stylesheet" href="./styles/grimoire.css?v=20261120" />
+  <link rel="stylesheet" href="./styles/grimoire.css?v=20261123" />
 </head>
 <body class="flex flex-col justify-between">
   <div class="dusty-paper-grain" aria-hidden="true"></div>
@@ -147,11 +147,12 @@
                   <stop offset="100%" stop-color="#C97E18" />
                 </linearGradient>
               </defs>
-              <polygon points="32,4 39.5,19 56,19 44,32 56,45 39.5,45 32,60 24.5,45 8,45 20,32 8,19 24.5,19"
+              <polygon points="32,6 40.3,17.7 54.5,19 48.5,32 54.5,45 40.3,46.3 32,58 23.7,46.3 9.5,45 15.5,32 9.5,19 23.7,17.7"
                        fill="url(#clowStarGold)" stroke="#4A1F12" stroke-width="2.6" stroke-linejoin="round" />
-              <line x1="32" y1="4" x2="32" y2="60" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
-              <line x1="8" y1="19" x2="56" y2="45" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
-              <line x1="56" y1="19" x2="8" y2="45" stroke="#4A1F12" stroke-width="1.3" opacity="0.7" />
+              <line x1="32" y1="6" x2="32" y2="58" stroke="#4A1F12" stroke-width="1.2" opacity="0.55" />
+              <line x1="9.5" y1="19" x2="54.5" y2="45" stroke="#4A1F12" stroke-width="1.2" opacity="0.55" />
+              <line x1="54.5" y1="19" x2="9.5" y2="45" stroke="#4A1F12" stroke-width="1.2" opacity="0.55" />
+              <circle cx="32" cy="32" r="4.2" fill="#FFF2A6" stroke="#4A1F12" stroke-width="1.4" />
             </svg>
           </span>
           <div class="flex flex-col items-start gap-0.5 leading-tight">
@@ -230,7 +231,7 @@
         <div id="hero-card-fan" class="relative h-52 sm:h-64 md:h-[300px] py-2 w-full max-w-3xl flex items-center justify-center select-none"></div>
       </div>
 
-      <div class="max-w-2xl mx-auto text-center space-y-1 px-4 sm:px-6 py-3 rounded-2xl bg-[#FBF1D4]/10 backdrop-blur-[1px]">
+      <div class="max-w-2xl mx-auto text-center space-y-1 px-8 sm:px-14 py-6 bg-[radial-gradient(closest-side_at_center,rgba(243,226,179,0.92)_0%,rgba(243,226,179,0.68)_58%,rgba(243,226,179,0)_100%)]">
         <div class="flex items-center justify-center gap-2 sm:gap-3 text-[#8A5414]">
           <span class="h-[1px] w-8 sm:w-14 bg-[#8A5414]/75"></span>
           <span class="font-cinzel text-[9px] sm:text-[11px] tracking-[0.16em] sm:tracking-[0.22em] uppercase text-[#4F2031]">
@@ -358,6 +359,9 @@
                         maxlength="500"
                         placeholder="พิมพ์เรื่องราว ความกังวล หรือคำถามที่อยู่ในใจของคุณที่นี่... (หรือเว้นว่างไว้แล้วอธิษฐานในใจก็ได้เช่นกัน)"
                         class="w-full rounded-md bg-[#FFFDF5]/85 border border-[#8A5414]/70 px-3 py-2 font-pridi text-xs sm:text-sm text-[#2A160E] placeholder-[#523020]/55 focus:outline-none focus:border-[#4F2031] focus:ring-1 focus:ring-[#4F2031]"></textarea>
+              <div class="flex justify-end -mt-1">
+                <span id="user-question-counter" class="font-fahkwang text-[11px] text-[#8A5414]">0 / 500 ตัวอักษร</span>
+              </div>
 
               <div class="bg-[#8F5B6E]/12 border border-[#8F5B6E]/45 rounded-md p-2.5 flex items-start gap-2">
                 <span class="text-[#4F2031] mt-0.5 shrink-0" aria-hidden="true">
@@ -370,14 +374,16 @@
                 <div class="space-y-0.5 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
                   <p class="font-fahkwang text-[#4F2031]">การคุ้มครองข้อมูลส่วนบุคคลและความลับของคุณ</p>
                   <p class="text-[#523020]">
-                    ข้อความของคุณอยู่ในอุปกรณ์ของคุณเท่านั้น หากหลังเปิดไพ่คุณเลือกกดปุ่ม <strong>"ให้ AI ช่วยตีความ"</strong> ระบบจะส่งเฉพาะคำถามและชื่อไพ่ไปประมวลผลแบบชั่วคราว <strong>ไม่มีการบันทึกลงฐานข้อมูลและไม่เก็บประวัติส่วนตัว</strong>
+                    ข้อความที่คุณฝากไว้จะถูกส่งไปประมวลผลคู่กับชื่อไพ่แบบชั่วคราวเฉพาะรอบการเปิดไพ่นี้เท่านั้น <strong>ไม่มีการบันทึกลงฐานข้อมูลและไม่เก็บประวัติส่วนตัว</strong>
                   </p>
                 </div>
               </div>
 
-              <div id="question-ai-status-note" class="bg-[#FCF4DC]/80 border border-[#8A5414]/35 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#523020] leading-relaxed">
-                ✦ ระบบมี 2 รูปแบบ: <strong>คำทำนายจาก AI ที่อ่านเรื่องราวของคุณโดยตรง</strong> และ <strong>คำทำนายจากตำราโคลว์</strong> (หากโควตา AI ช่วงนั้นเต็ม ระบบจะสลับใช้ตำราโคลว์ให้อัตโนมัติ)
+              <div class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
+                ✦ <strong class="font-fahkwang text-[#4F2031]">การสับและเลือกไพ่เป็นอิสระจากคำถาม:</strong> ไพ่ทั้ง 52 ใบมีโอกาสถูกหยิบเท่ากันทุกใบอย่างเป็นธรรม คำถามที่คุณฝากไว้จะใช้เพื่อช่วยตีความให้ตรงเรื่องของคุณหลังจากเปิดไพ่แล้วเท่านั้น
               </div>
+
+              <div id="question-ai-status-note" class="hidden bg-[#FCF4DC]/80 border border-[#8A5414]/35 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#523020] leading-relaxed"></div>
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-2 pt-0.5">
@@ -513,7 +519,7 @@
       </div>
 
       <h3 id="analytics-consent-title" class="font-charm text-xl sm:text-2xl text-[#2A160E] leading-snug">
-        ขอความยินยอมการจัดเก็บสถิติ<br />และการใช้งาน
+        ขอความยินยอมการจัดเก็บสถิติและการใช้งาน
       </h3>
 
       <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">
@@ -580,8 +586,8 @@
         โปรดสำรวมจิตและเลือกไพ่คว่ำใบที่ท่านรู้สึก<strong>ถูกชะตา</strong>หรือสะดุดตาที่สุดในความรู้สึกแวบแรก
       </p>
 
-      <div class="bg-[#FFF4D6] border-2 border-[#D97706] rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#7C2D12] leading-relaxed">
-        <strong class="block text-sm font-fahkwang text-[#C2410C] mb-0.5">⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้</strong>
+      <div class="bg-[#FFF4D6] border-2 border-[#D97706] rounded-lg px-3.5 py-2.5 text-[12px] sm:text-[13px] font-pridi text-[#7C2D12] leading-relaxed">
+        <strong class="block text-[13px] sm:text-[14px] font-fahkwang text-[#C2410C] mb-0.5 whitespace-nowrap">⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้</strong>
         เมื่อแตะเลือกไพ่แล้ว หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น
       </div>
 
@@ -623,8 +629,8 @@
         </button>
       </div>
 
-      <div id="reading-modal-footer-bar" class="hidden mt-3 pt-3 pb-3 border-t border-[#8A5414]/45 flex items-center justify-end gap-2">
-        <div id="reading-modal-footer-actions" class="flex flex-wrap items-center gap-2 ml-auto"></div>
+      <div id="reading-modal-footer-bar" class="hidden mt-3 pt-3 pb-3 border-t border-[#8A5414]/45 flex items-center justify-between gap-2">
+        <div id="reading-modal-footer-actions" class="w-full flex flex-wrap items-center justify-end gap-2"></div>
       </div>
     </div>
   </div>
@@ -642,18 +648,21 @@
 
   <!-- FOOTER -->
   <footer class="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2.5 pb-4 sm:pb-5 relative z-10">
-    <div class="border-t border-[#8A5414]/45 pt-2.5 px-3 pb-2 rounded-xl bg-[#FBF1D4]/5 backdrop-blur-[1px] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
+    <div class="py-5 px-8 sm:px-12 bg-[radial-gradient(closest-side_at_center,rgba(232,205,144,0.92)_0%,rgba(232,205,144,0.68)_58%,rgba(232,205,144,0)_100%)] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
       <p>✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)</p>
-      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3">
-        <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang inline-flex items-center gap-1">
-          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-          <span>ส่งข้อเสนอแนะ (clowcardreader.dev@gmail.com)</span>
+      <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-3">
+        <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 leading-snug">
+          <span class="inline-flex items-center gap-1 whitespace-nowrap">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            <span>ส่งข้อเสนอแนะ</span>
+          </span>
+          <span class="text-[11px] opacity-85 whitespace-nowrap">(clowcardreader.dev@gmail.com)</span>
         </a>
         <p class="font-cinzel text-[11px] tracking-wide text-[#2A160E]/85">© CLAMP, ST, Kodansha / NHK, NEP.</p>
       </div>
     </div>
   </footer>
 
-  <script type="module" src="./js/app.js?v=20261120"></script>
+  <script type="module" src="./js/app.js?v=20261123"></script>
 </body>
 </html>

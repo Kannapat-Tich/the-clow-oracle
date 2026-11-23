@@ -7,6 +7,11 @@
  */
 
 import { getCurrentLang, getSpreadName, getPosTitle, getPosMeaning } from './i18n.js';
+import { DAILY_READINGS } from '../data/daily-readings.js';
+import { ROMANCE_READINGS } from '../data/romance-readings.js';
+import { ROMANCE_READINGS_DETAIL } from '../data/romance-readings-detail.js';
+import { GENERAL_READINGS } from '../data/general-readings.js';
+import { GENERAL_READINGS_DETAIL } from '../data/general-readings-detail.js';
 
 const readingCache = new Map();
 const inFlightRequests = new Map();
@@ -242,12 +247,132 @@ function buildPositionConciseReading(pos, card, ctx) {
   return `หัวใจของ${subject}ชี้ให้เห็นว่า ${firstSentence}`;
 }
 
+function buildCuratedDailyReading(spread, card) {
+  const entry = card && DAILY_READINGS[card.id];
+  if (!entry) return null;
+  const pos = spread.positions[0] || { index: 1, title: 'สารหลักประจำวัน' };
+  return {
+    mode: 'guidebook',
+    provider: 'Daily Grimoire Database',
+    overview: entry.overview,
+    connections: [
+      {
+        positionIndex: pos.index,
+        positionTitle: pos.title,
+        cardName: `${card.name} (${card.thaiName})`,
+        insight: entry.overview,
+        detailInsight: entry.overview
+      }
+    ],
+    advice: entry.advice ? [entry.advice] : [],
+    closing: entry.closing || 'จงรับฟังเสียงหัวใจของตนเองควบคู่กับคำเตือนจากหน้าไพ่ แล้วก้าวเดินต่อไปอย่างมั่นคง'
+  };
+}
+
+function buildCuratedRomanceReading(spread, drawnCards) {
+  const sorted = [...drawnCards].sort((a, b) => a.posIndex - b.posIndex);
+  const connections = [];
+  const byPos = {};
+
+  for (const slot of sorted) {
+    const cardEntry = slot.card && ROMANCE_READINGS[slot.card.id];
+    const shortText = cardEntry && cardEntry[slot.posIndex];
+    if (!shortText) return null;
+    const detailEntry = slot.card && ROMANCE_READINGS_DETAIL[slot.card.id];
+    const detailText = (detailEntry && detailEntry[slot.posIndex]) || shortText;
+    const pos = spread.positions.find((p) => p.index === slot.posIndex);
+    const posTitle = pos ? pos.title : `ตำแหน่งที่ ${slot.posIndex}`;
+    const cleanShort = String(shortText).replace(/,/g, '').replace(/\s{2,}/g, ' ').trim();
+    const cleanDetail = String(detailText).replace(/,/g, '').replace(/\s{2,}/g, ' ').trim();
+    byPos[slot.posIndex] = cleanShort;
+    connections.push({
+      positionIndex: slot.posIndex,
+      positionTitle: posTitle,
+      cardName: `${slot.card.name} (${slot.card.thaiName})`,
+      insight: cleanShort,
+      detailInsight: cleanDetail
+    });
+  }
+
+  const overviewParts = [byPos[1], byPos[3], byPos[4], byPos[6]].filter(Boolean);
+  const overview = overviewParts.length > 0 ? overviewParts.join(' ') : connections.map((c) => c.insight).join(' ');
+  const keyWarningSlots = sorted.filter((s) => s.posIndex === 5 || s.posIndex === 7);
+  const warningPool = (keyWarningSlots.length > 0 ? keyWarningSlots : sorted.slice(0, 2))
+    .map((s) => String(s.card.warning || '').replace(/,/g, '').replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
+  const adviceText = warningPool.join(' ') || byPos[7] || byPos[5] || '';
+
+  return {
+    mode: 'guidebook',
+    provider: 'Romance Grimoire Database',
+    overview,
+    connections,
+    advice: adviceText ? [adviceText] : [],
+    closing: 'ความรักที่มั่นคงงอกงามจากความเข้าใจและการรับฟังด้วยหัวใจ ขอให้ไพ่โคลว์นำทางความสัมพันธ์'
+  };
+}
+
+function buildCuratedGeneralReading(spread, drawnCards) {
+  const sorted = [...drawnCards].sort((a, b) => a.posIndex - b.posIndex);
+  const connections = [];
+  const byPos = {};
+
+  for (const slot of sorted) {
+    const cardEntry = slot.card && GENERAL_READINGS[slot.card.id];
+    const shortText = cardEntry && cardEntry[slot.posIndex];
+    if (!shortText) return null;
+    const detailEntry = slot.card && GENERAL_READINGS_DETAIL[slot.card.id];
+    const detailText = (detailEntry && detailEntry[slot.posIndex]) || shortText;
+    const pos = spread.positions.find((p) => p.index === slot.posIndex);
+    const posTitle = pos ? pos.title : `ตำแหน่งที่ ${slot.posIndex}`;
+    const cleanShort = String(shortText).replace(/,/g, '').replace(/\s{2,}/g, ' ').trim();
+    const cleanDetail = String(detailText).replace(/,/g, '').replace(/\s{2,}/g, ' ').trim();
+    byPos[slot.posIndex] = cleanShort;
+    connections.push({
+      positionIndex: slot.posIndex,
+      positionTitle: posTitle,
+      cardName: `${slot.card.name} (${slot.card.thaiName})`,
+      insight: cleanShort,
+      detailInsight: cleanDetail
+    });
+  }
+
+  const overviewParts = [byPos[1], byPos[5], byPos[8], byPos[9]].filter(Boolean);
+  const overview = overviewParts.length > 0 ? overviewParts.join(' ') : connections.map((c) => c.insight).join(' ');
+  const keyWarningSlots = sorted.filter((s) => s.posIndex === 7 || s.posIndex === 6);
+  const warningPool = (keyWarningSlots.length > 0 ? keyWarningSlots : sorted.slice(0, 2))
+    .map((s) => String(s.card.warning || '').replace(/,/g, '').replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
+  const adviceText = warningPool.join(' ') || byPos[6] || byPos[5] || '';
+
+  return {
+    mode: 'guidebook',
+    provider: 'General Grimoire Database',
+    overview,
+    connections,
+    advice: adviceText ? [adviceText] : [],
+    closing: 'ทุกเส้นทางล้วนมีจังหวะและคำตอบซ่อนอยู่ ขอให้ไพ่โคลว์เป็นแสงนำทาง'
+  };
+}
+
 function buildLocalGuidebookSynthesis(spread, question, drawnCards, lang = getCurrentLang()) {
   if (lang === 'en') {
     return buildEnglishSynthesis(spread, question, drawnCards);
   }
   const sorted = [...drawnCards].sort((a, b) => a.posIndex - b.posIndex);
   const first = sorted[0];
+  if (spread && spread.spread_id === 'daily_single' && first && first.card) {
+    const curatedDaily = buildCuratedDailyReading(spread, first.card);
+    if (curatedDaily) return curatedDaily;
+  }
+  if (spread && spread.spread_id === 'love_cross' && sorted.length > 0) {
+    const curatedRomance = buildCuratedRomanceReading(spread, sorted);
+    if (curatedRomance) return curatedRomance;
+  }
+  if (spread && spread.spread_id === 'general_six' && sorted.length > 0) {
+    const curatedGeneral = buildCuratedGeneralReading(spread, sorted);
+    if (curatedGeneral) return curatedGeneral;
+  }
   const ctx = detectQuestionContext(question);
 
   const sequentialStory = sorted
@@ -304,7 +429,7 @@ function buildLocalGuidebookSynthesis(spread, question, drawnCards, lang = getCu
     connections,
     advice,
     closing: ctx.hasQuestion
-      ? 'ขอให้พลังแห่งคัมภีร์โคลว์เป็นแสงนำทางให้คุณก้าวผ่านเรื่องนี้ไปได้อย่างมั่นคงและสบายใจ'
+      ? 'ขอให้พลังแห่งไพ่โคลว์เป็นแสงนำทางให้คุณก้าวผ่านเรื่องนี้ไปได้อย่างมั่นคงและสบายใจ'
       : 'จงรับฟังเสียงหัวใจของตนเองควบคู่กับคำเตือนจากหน้าไพ่ แล้วก้าวเดินต่อไปอย่างมั่นคง'
   };
 }
@@ -320,6 +445,33 @@ export async function requestAiInterpretation({ spread, question, drawnCards, la
   }
   if (inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey);
+  }
+
+  // โหมดทำนายดวงรายวัน (ภาษาไทย ไม่ฝากคำถาม): ดึงจากฐานข้อมูลคำทำนายรายวัน 52 ใบโดยตรง (0ms ไม่เปลืองโควต้า AI)
+  if (spread && spread.spread_id === 'daily_single' && lang === 'th' && !cleanQuestion && drawnCards.length === 1) {
+    const curatedDaily = buildCuratedDailyReading(spread, drawnCards[0].card);
+    if (curatedDaily) {
+      readingCache.set(cacheKey, curatedDaily);
+      return curatedDaily;
+    }
+  }
+
+  // โหมดทำนายความรักและชีวิตคู่ (ภาษาไทย ไม่ฝากคำถาม): ดึงจากฐานข้อมูลคำทำนายความรัก 364 ตำแหน่งโดยตรง (0ms ไม่เปลืองโควต้า AI)
+  if (spread && spread.spread_id === 'love_cross' && lang === 'th' && !cleanQuestion && drawnCards.length > 0) {
+    const curatedRomance = buildCuratedRomanceReading(spread, drawnCards);
+    if (curatedRomance) {
+      readingCache.set(cacheKey, curatedRomance);
+      return curatedRomance;
+    }
+  }
+
+  // โหมดทำนายเรื่องทั่วไป (ภาษาไทย ไม่ฝากคำถาม): ดึงจากฐานข้อมูลคำทำนายเรื่องทั่วไป 520 ตำแหน่งโดยตรง (0ms ไม่เปลืองโควต้า AI)
+  if (spread && spread.spread_id === 'general_six' && lang === 'th' && !cleanQuestion && drawnCards.length > 0) {
+    const curatedGeneral = buildCuratedGeneralReading(spread, drawnCards);
+    if (curatedGeneral) {
+      readingCache.set(cacheKey, curatedGeneral);
+      return curatedGeneral;
+    }
   }
 
   const payload = {
@@ -362,7 +514,7 @@ export async function requestAiInterpretation({ spread, question, drawnCards, la
           mode: 'fallback_synthesis',
           notice:
             data.message ||
-            'โควต้า AI เต็มชั่วคราว — ระบบจึงร้อยเรียงคำทำนายจากคัมภีร์โคลว์การ์ดต้นฉบับให้แทนอัตโนมัติค่ะ'
+            'พลังเวทของระบบผู้ช่วยตีความเต็มชั่วคราว — คัมภีร์จึงร้อยเรียงคำทำนายจากตำราโคลว์การ์ดต้นฉบับให้แทนทันที'
         };
       }
 
@@ -377,7 +529,7 @@ export async function requestAiInterpretation({ spread, question, drawnCards, la
           mode: 'fallback_synthesis',
           notice:
             data.message ||
-            'AI ขัดข้องชั่วคราว — ระบบจึงร้อยเรียงคำทำนายจากคัมภีร์โคลว์การ์ดต้นฉบับให้แทนอัตโนมัติค่ะ'
+            'ระบบผู้ช่วยตีความพักชั่วคราว — คัมภีร์จึงร้อยเรียงคำทำนายจากตำราโคลว์การ์ดต้นฉบับให้แทนทันที'
         };
       }
 
