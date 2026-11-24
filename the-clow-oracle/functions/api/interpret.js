@@ -101,7 +101,6 @@ function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
       `3. First identify the user's real goal, worry, or decision from their question, then directly weave those concrete details into the overview, every relevant position insight, and advice.\n` +
       `4. Respond ONLY with valid JSON matching this exact schema:\n` +
       `{\n` +
-      `  "overview": "Direct, compassionate answer to the user's specific question synthesized from all drawn cards (3-4 clear, graceful sentences)",\n` +
       `  "connections": [\n` +
       `    { "positionIndex": 1, "positionTitle": "Position Title in English", "cardName": "CARD NAME", "insight": "Adapt the curated position reading directly to the user's specific situation (2-3 concise, warm sentences)" }\n` +
       `  ],\n` +
@@ -131,11 +130,9 @@ function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
     `1. ยึด "คำทำนายต้นฉบับประจำตำแหน่งนี้" ที่ให้ไว้ด้านล่างเป็นแกนความหมายหลักของไพ่แต่ละใบ ห้ามแต่งความหมายขัดแย้งกับต้นฉบับ และคงความละมุนสละสลวยในโทนเดียวกัน\n` +
     `2. หน้าที่หลักของคุณคือ "นำคำทำนายต้นฉบับประจำตำแหน่งมาผูกและต่อยอดให้ตรงกับคำถาม/สถานการณ์จริงที่ผู้ใช้เล่ามา" ให้แกะประเด็นสำคัญจากคำถามก่อนว่าผู้ใช้กำลังเผชิญเรื่องอะไร มีเป้าหมายหรือความกังวลเรื่องไหน หรือกำลังชั่งใจทางเลือกใด แล้วเอ่ยถึงบริบทจริงนั้นอย่างเป็นธรรมชาติและเฉพาะเจาะจงในทุกตำแหน่งที่เกี่ยวข้อง ห้ามคัดลอกต้นฉบับแบบกว้างๆ โดยไม่พูดถึงเรื่องที่ผู้ใช้ถาม\n` +
     `3. ชั่งน้ำหนักความเกี่ยวข้องอย่างเป็นธรรมชาติ: ตำแหน่งหลักที่ตรงกับปัญหาให้เจาะลึกผูกกับเรื่องที่ผู้ใช้ถามอย่างชัดเจน ส่วนตำแหน่งที่เป็นมุมมองกว้างหรือบรรยากาศแวดล้อมให้เชื่อมโยงอย่างนุ่มนวลไม่ฝืนยัดเยียด หากผู้ใช้ถามหลายประเด็นให้ตอบให้ครบถ้วน\n` +
-    `4. ใน "overview" ให้เขียนเป็น "บทสรุปคำตอบที่ตรงประเด็นสำหรับคำถามของผู้ใช้" (3-4 ประโยค) สังเคราะห์จากหน้าไพ่ทั้งหมดว่าเรื่องที่ผู้ใช้ถามมีแนวโน้มเป็นอย่างไร จุดชี้ขาดคืออะไร และควรวางใจหรือตัดสินใจอย่างไร\n` +
-    `5. ใช้ภาษาไทยสละสลวย ละมุนหู เป็นกลางและเป็นธรรมชาติ **ห้ามลงท้ายด้วยคำว่า "ครับ" หรือ "ค่ะ"** ในข้อความคำทำนายทุกส่วน **ห้ามใช้เครื่องหมายคอมม่า (,) ในประโยคภาษาไทย** และไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
-    `6. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
+    `4. ใช้ภาษาไทยสละสลวย ละมุนหู เป็นกลางและเป็นธรรมชาติ **ห้ามลงท้ายด้วยคำว่า "ครับ" หรือ "ค่ะ"** ในข้อความคำทำนายทุกส่วน **ห้ามใช้เครื่องหมายคอมม่า (,) ในประโยคภาษาไทย** และไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
+    `5. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
     `{\n` +
-    `  "overview": "บทสรุปคำตอบที่ตรงประเด็นสำหรับคำถามหรือสถานการณ์จริงของผู้ใช้ โดยสังเคราะห์จากไพ่ทั้งหมด (3-4 ประโยค ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)",\n` +
     `  "connections": [\n` +
     `    {\n` +
     `      "positionIndex": 1,\n` +
@@ -156,15 +153,22 @@ function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
 
 function safeParseJson(rawText) {
   if (!rawText) return null;
-  const cleaned = rawText
+  let cleaned = rawText
     .trim()
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```$/i, '')
     .trim();
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
   try {
     const parsed = JSON.parse(cleaned);
-    if (parsed && typeof parsed.overview === 'string') return parsed;
+    if (parsed && (Array.isArray(parsed.connections) || typeof parsed.overview === 'string')) {
+      return parsed;
+    }
   } catch (_) {}
   return null;
 }
@@ -173,60 +177,69 @@ async function callGemini(apiKey, model, prompt) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const generationConfig = {
     temperature: 0.75,
-    maxOutputTokens: 4096,
+    maxOutputTokens: 6144,
     responseMimeType: 'application/json'
   };
-  if (model === 'gemini-2.5-flash') {
+  if (model.startsWith('gemini-2.5-')) {
     generationConfig.thinkingConfig = { thinkingBudget: 0 };
   }
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    signal: AbortSignal.timeout(22000),
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig
-    })
-  });
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      signal: AbortSignal.timeout(25000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig
+      })
+    });
 
-  if (res.status === 429) {
-    return { quotaExceeded: true };
-  }
-  if (!res.ok) {
-    return { error: `Gemini HTTP ${res.status}` };
-  }
+    if (res.status === 429) {
+      return { quotaExceeded: true, error: `${model}: HTTP 429` };
+    }
+    if (!res.ok) {
+      return { error: `${model}: HTTP ${res.status}` };
+    }
 
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const reading = safeParseJson(text);
-  if (!reading) return { error: 'Invalid JSON from Gemini' };
-  return { reading, provider: `Gemini (${model})` };
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const text = parts.map((p) => (typeof p?.text === 'string' ? p.text : '')).join('\n').trim();
+    const reading = safeParseJson(text);
+    if (!reading) return { error: `${model}: Invalid JSON` };
+    return { reading, provider: `Gemini (${model})` };
+  } catch (err) {
+    return { error: `${model}: ${err?.name || 'FetchError'}` };
+  }
 }
 
 async function callGroq(apiKey, prompt) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    signal: AbortSignal.timeout(12000),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
 
-  if (res.status === 429) return { quotaExceeded: true };
-  if (!res.ok) return { error: `Groq HTTP ${res.status}` };
+    if (res.status === 429) return { quotaExceeded: true, error: 'groq: HTTP 429' };
+    if (!res.ok) return { error: `groq: HTTP ${res.status}` };
 
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content || '';
-  const reading = safeParseJson(text);
-  if (!reading) return { error: 'Invalid JSON from Groq' };
-  return { reading, provider: 'Groq (Llama 3.3 70B)' };
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content || '';
+    const reading = safeParseJson(text);
+    if (!reading) return { error: 'groq: Invalid JSON' };
+    return { reading, provider: 'Groq (Llama 3.3 70B)' };
+  } catch (err) {
+    return { error: `groq: ${err?.name || 'FetchError'}` };
+  }
 }
 
 export async function onRequestPost(context) {
@@ -285,27 +298,29 @@ export async function onRequestPost(context) {
 
   const prompt = buildOraclePrompt({ spread, question, resolvedCards, lang });
   let sawQuota = false;
+  const errors = [];
 
   if (geminiKey) {
-    const primary = await callGemini(geminiKey, 'gemini-2.5-flash', prompt);
-    if (primary.reading) return jsonResponse(primary, 200);
-    if (primary.quotaExceeded) sawQuota = true;
-
-    const lite = await callGemini(geminiKey, 'gemini-2.5-flash-lite', prompt);
-    if (lite.reading) return jsonResponse(lite, 200);
-    if (lite.quotaExceeded) sawQuota = true;
+    for (const model of ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']) {
+      const attempt = await callGemini(geminiKey, model, prompt);
+      if (attempt.reading) return jsonResponse(attempt, 200);
+      if (attempt.quotaExceeded) sawQuota = true;
+      if (attempt.error) errors.push(attempt.error);
+    }
   }
 
   if (groqKey) {
     const backup = await callGroq(groqKey, prompt);
     if (backup.reading) return jsonResponse(backup, 200);
     if (backup.quotaExceeded) sawQuota = true;
+    if (backup.error) errors.push(backup.error);
   }
 
   if (sawQuota) {
     return jsonResponse(
       {
         code: 'QUOTA_EXCEEDED',
+        detail: errors.join(' | '),
         message:
           lang === 'en'
             ? 'Our free AI reading quota is busy right now. You can still read your full guidebook message below.'
@@ -318,6 +333,7 @@ export async function onRequestPost(context) {
   return jsonResponse(
     {
       code: 'AI_UNAVAILABLE',
+      detail: errors.join(' | '),
       message:
         lang === 'en'
           ? 'The AI reader is taking a brief rest. You can read your complete guidebook interpretation below.'

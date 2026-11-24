@@ -2242,30 +2242,10 @@ async function triggerAiInterpretation() {
   const cleanAdviceText = rawAdviceText.replace(/,/g, '');
 
   const isSingleDaily = activeSpread && activeSpread.spread_id === 'daily_single';
-  const hasUserQuestion = Boolean(userSecretQuestion && userSecretQuestion.trim());
   const cleanOverviewText = String(result.overview || '').replace(/,/g, '').trim();
-  const firstConnectionInsight =
-    Array.isArray(result.connections) && result.connections[0]
-      ? String(result.connections[0].insight || '').replace(/,/g, '').trim()
-      : '';
-  const shouldShowQuestionOverview =
-    hasUserQuestion &&
-    Boolean(cleanOverviewText) &&
-    Array.isArray(result.connections) &&
-    result.connections.length > 0 &&
-    (!isSingleDaily || cleanOverviewText !== firstConnectionInsight);
 
   const noticeHtml = result.notice
     ? `<div class="bg-[#FFF4D6]/90 border border-[#B47B1E]/55 rounded-lg px-3.5 py-2 text-[11px] sm:text-xs font-pridi text-[#6D3B16] leading-relaxed">✦ ${escapeHtml(String(result.notice).replace(/,/g, '').trim())}</div>`
-    : '';
-
-  const questionOverviewHtml = shouldShowQuestionOverview
-    ? `
-      <div class="bg-[#F8E7B9]/85 border border-[#8A5414]/60 rounded-lg p-3.5 sm:p-4 space-y-1.5 text-left">
-        <div class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">${escapeHtml(t('summaryOverviewHeader'))}</div>
-        <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanOverviewText)}</p>
-      </div>
-    `
     : '';
 
   const overviewBlocks =
@@ -2318,7 +2298,6 @@ async function triggerAiInterpretation() {
   outputEl.innerHTML = `
     <div class="space-y-3">
       ${noticeHtml}
-      ${questionOverviewHtml}
       <div class="space-y-2.5">
         ${overviewBlocks}
       </div>
