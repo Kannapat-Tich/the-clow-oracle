@@ -32,7 +32,8 @@ import {
   getSpreadPlaceholder,
   getPosTitle,
   getPosMeaning
-} from './i18n.js?v=20261124u';
+} from './i18n.js?v=20261124z15';
+import { renderIgStoryCanvas, renderFullSummaryCanvas, canvasToBlob } from './share-card.js?v=20261124z15';
 
 /**
  * =========================================================================
@@ -542,6 +543,7 @@ function enterRitualShuffleStage() {
   shuffleCount = 0;
   spreadCanvasZoom = 1;
   placedSlots = [];
+  lastSummaryResult = null;
   focusedBoardIdx = -1;
   isAnimatingRitual = false;
   shuffledDeck = fisherYatesShuffle(CARDS_DATA);
@@ -1107,13 +1109,21 @@ async function openCompatibilitySummaryModal() {
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
-          ${escapeHtml(t('btnOtherSpreads'))}
-        </button>
-        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-          ${isEn ? 'Back to Board' : 'กลับไปแท่นไพ่'}
-        </button>
+      <div class="w-full flex flex-col gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
+            ${escapeHtml(t('btnOtherSpreads'))}
+          </button>
+          <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+            ${isEn ? 'Back to Board' : 'กลับไปแท่นไพ่'}
+          </button>
+        </div>
+        <div class="flex items-center justify-end gap-3 text-[11px] font-fahkwang text-[#523020]/80">
+          <button onclick="saveReadingImage('story', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span data-share-btn-label>${escapeHtml(t('btnShareStory'))}</span>
+          </button>
+        </div>
       </div>
     `;
   }
@@ -1241,6 +1251,7 @@ function resetToHome() {
   clearPendingDrawNotice();
   activeSpread = null;
   placedSlots = [];
+  lastSummaryResult = null;
   clearAiReadingCache();
   initSpreadNavigation();
 
@@ -2228,6 +2239,9 @@ async function triggerAiInterpretation() {
     question: userSecretQuestion,
     drawnCards: placedSlots
   });
+  if (result && result.mode !== 'quota' && result.mode !== 'fallback') {
+    lastSummaryResult = result;
+  }
 
   if (result.mode === 'quota' || result.mode === 'fallback') {
     const isEnNotice = getCurrentLang() === 'en';
@@ -2343,14 +2357,14 @@ function openSingleCardModal(posIndex) {
   const posMeaning = getPosMeaning(activeSpread.spread_id, posMeta);
   const body = document.getElementById('modal-reading-body');
   body.innerHTML = `
-    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 pt-1">
-      <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-2">
-        <div class="w-44 sm:w-52 md:w-56 h-auto hero-float-2" data-card-front-slot="${card.id}">
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 pt-1">
+      <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
+        <div class="w-40 sm:w-48 md:w-52 h-auto hero-float-2" data-card-front-slot="${card.id}">
           ${buildMinimalCardFrontHTML(card)}
         </div>
-        <div class="text-center space-y-0.5">
-          <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-          ${!isEn ? `<h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>` : ''}
+        <div class="text-center">
+          <span class="font-cinzel text-base sm:text-lg font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
+          ${!isEn ? `<h3 class="font-charm text-base sm:text-lg text-[#4F2031] mt-0.5 leading-snug">${card.thaiName}</h3>` : ''}
         </div>
       </div>
 
@@ -2505,14 +2519,14 @@ function openFullReadingModal() {
   if (isDaily) {
     const card = sortedSlots[0].card;
     body.innerHTML = `
-      <div class="space-y-4">
-        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pt-1">
-          <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-2">
+      <div class="space-y-3">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 pt-1">
+          <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
             <div class="w-36 sm:w-44 h-auto" data-card-front-slot="${card.id}">
               ${buildMinimalCardFrontHTML(card)}
             </div>
-            <div class="text-center space-y-0.5">
-              <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
+            <div class="text-center">
+              <span class="font-cinzel text-base sm:text-lg font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
             </div>
           </div>
 
@@ -2545,13 +2559,31 @@ function openFullReadingModal() {
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
-          ${escapeHtml(t('btnOtherSpreads'))}
-        </button>
-        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-          ${isEnFooter ? 'Back to Board' : 'กลับไปแท่นไพ่'}
-        </button>
+      <div class="w-full flex flex-col gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
+            ${escapeHtml(t('btnOtherSpreads'))}
+          </button>
+          <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+            ${isEnFooter ? 'Back to Board' : 'กลับไปแท่นไพ่'}
+          </button>
+        </div>
+        <div class="flex items-center justify-end gap-3 text-[11px] font-fahkwang text-[#523020]/80">
+          <button onclick="saveReadingImage('story', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span data-share-btn-label>${escapeHtml(t('btnShareStory'))}</span>
+          </button>
+          ${
+            !isDaily
+              ? `
+          <span class="text-[#8A5414]/40 select-none">·</span>
+          <button onclick="saveReadingImage('full', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-share-btn-label>${escapeHtml(t('btnShareFull'))}</span>
+          </button>`
+              : ''
+          }
+        </div>
       </div>
     `;
   }
@@ -2683,176 +2715,152 @@ function scrollReadingModal(direction) {
   scrollBox.scrollBy({ top: direction * step, behavior: 'smooth' });
 }
 
-async function loadHtml2Canvas() {
-  if (window.html2canvas) return window.html2canvas;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    s.async = true;
-    s.onload = resolve;
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  return window.html2canvas;
+let lastSummaryResult = null;
+let isSavingReadingImage = false;
+
+async function buildShareCompatibilityPayload() {
+  const isEn = getCurrentLang() === 'en';
+  const remain = compatCards.length;
+  const tier = getCompatibilityTier(remain);
+  const leftCard = compatCards.length > 0 ? compatCards[0] : null;
+  const rightCard = compatCards.length > 1 ? compatCards[compatCards.length - 1] : leftCard;
+
+  let compatDb = COMPATIBILITY_READINGS;
+  if (isEn) {
+    try {
+      const mod = await import('../data/en/compatibility-readings.js');
+      if (mod?.COMPATIBILITY_READINGS_EN) compatDb = mod.COMPATIBILITY_READINGS_EN;
+    } catch (_) {}
+  }
+
+  return {
+    remain,
+    tier,
+    leftCard,
+    rightCard,
+    leftCauseText: (leftCard && compatDb[leftCard.id]?.cause) || (leftCard ? leftCard.meaning : ''),
+    rightAdviceText: (rightCard && compatDb[rightCard.id]?.advice) || (rightCard ? rightCard.warning : '')
+  };
 }
 
-async function shareOrSaveSummary() {
-  if (!activeSpread || !placedSlots.length) return;
-  const isEn = getCurrentLang() === 'en';
-  trackEvent('summary_share', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name });
-  const btn = document.getElementById('btn-share-summary');
-  if (btn) btn.textContent = isEn ? '✦ Saving reading image...' : '✦ กำลังบันทึกภาพหน้าสรุป...';
-  const sorted = [...placedSlots].sort((a, b) => a.posIndex - b.posIndex);
-  const result = buildLocalGuidebookSynthesis(activeSpread, userSecretQuestion, placedSlots);
+async function saveReadingImage(mode = 'story', triggerBtn = null) {
+  if (!activeSpread || isSavingReadingImage) return;
+  const isCompat = activeSpread.spread_id === 'compatibility_52';
+  if (!isCompat && placedSlots.length < activeSpread.card_count) return;
 
-  const lines = [
-    `THE CLOW — ${getSpreadName(activeSpread)}`,
-    isEn
-      ? `Cards drawn: ${sorted.map((s) => `${s.posIndex}. ${s.card.name}`).join(' · ')}`
-      : `ไพ่ที่ได้: ${sorted.map((s) => `${s.posIndex}. ${s.card.name} (${s.card.thaiName})`).join(' · ')}`,
-    ''
-  ];
-  if (Array.isArray(result.connections)) {
-    result.connections.forEach((item, idx) => {
-      const stepNum = item.positionIndex || idx + 1;
-      const titleText = item.positionTitle ? ` · ${item.positionTitle}` : '';
-      const insightText = isEn ? String(item.insight || '').trim() : String(item.insight || '').replace(/,/g, '').trim();
-      lines.push(isEn ? `Card ${stepNum}${titleText}: ${insightText}` : `ใบที่ ${stepNum}${titleText}: ${insightText}`);
-    });
+  isSavingReadingImage = true;
+  const isStory = mode !== 'full';
+  const defaultLabel = isStory ? t('btnShareStory') : t('btnShareFull');
+  const labelTarget = triggerBtn
+    ? triggerBtn.querySelector('[data-share-btn-label], #btn-board-share-story-label') || triggerBtn
+    : null;
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    if (labelTarget) labelTarget.textContent = getCurrentLang() === 'en' ? 'Saving...' : 'กำลังสร้างภาพ...';
   }
-  const cleanWarn = Array.isArray(result.advice)
-    ? result.advice.map((l) => (isEn ? String(l || '').trim() : String(l || '').replace(/,/g, '').trim())).filter(Boolean).join(' ')
-    : isEn
-      ? String(result.advice || '').trim()
-      : String(result.advice || '').replace(/,/g, '').trim();
-  if (cleanWarn) {
-    lines.push('', isEn ? `Guiding message: ${cleanWarn}` : `ไพ่เหล่านี้ต้องการเตือนคุณว่า ${cleanWarn}`);
-  }
-  const shareText = lines.join('\n');
 
   try {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
+    let payload = {
+      spread: activeSpread,
+      placedSlots
+    };
+
+    if (isCompat) {
+      payload.compatibilityData = await buildShareCompatibilityPayload();
+    } else {
+      let readingResult = lastSummaryResult;
+      if (!readingResult || !Array.isArray(readingResult.connections)) {
+        const hasQuestion = Boolean(userSecretQuestion && userSecretQuestion.trim());
+        readingResult =
+          hasQuestion || getCurrentLang() === 'en'
+            ? await requestAiInterpretation({
+                spread: activeSpread,
+                question: userSecretQuestion,
+                drawnCards: placedSlots
+              })
+            : buildLocalGuidebookSynthesis(activeSpread, userSecretQuestion, placedSlots);
+        if (readingResult && readingResult.mode !== 'quota' && readingResult.mode !== 'fallback') {
+          lastSummaryResult = readingResult;
+        }
+      }
+      payload.readingResult = readingResult;
     }
 
-    let blob = null;
-    const modalCard = document.querySelector('#reading-modal > div');
-    if (modalCard) {
+    const canvas = isStory
+      ? await renderIgStoryCanvas(payload)
+      : await renderFullSummaryCanvas(payload);
+    const blob = await canvasToBlob(canvas);
+    if (!blob) throw new Error('Failed to create PNG blob');
+
+    const filename = isStory
+      ? `clow-cards-${activeSpread.spread_id}-story.png`
+      : `clow-cards-${activeSpread.spread_id}-full.png`;
+    const file = new File([blob], filename, { type: 'image/png' });
+
+    trackEvent('summary_share', {
+      spreadId: activeSpread.spread_id,
+      mode: isStory ? 'story' : 'full'
+    });
+
+    let shared = false;
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        const html2canvas = await loadHtml2Canvas();
-        const prevMaxH = modalCard.style.maxHeight;
-        const prevOverflow = modalCard.style.overflow;
-        const prevScrollTop = modalCard.scrollTop;
-        const footerBar = document.getElementById('reading-modal-footer-bar');
-        const closeBtn = modalCard.querySelector('button[onclick="closeReadingModal()"]');
-        if (footerBar) footerBar.style.display = 'none';
-        if (closeBtn) closeBtn.style.display = 'none';
-        modalCard.scrollTop = 0;
-        modalCard.style.maxHeight = 'none';
-        modalCard.style.overflow = 'visible';
-
-        const shot = await html2canvas(modalCard, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#FBF1D4'
+        const shareUrl = window.location.origin;
+        const shareCaption =
+          getCurrentLang() === 'en'
+            ? `✦ ${getSpreadName(activeSpread)} — Cardcaptor Sakura · Clow Cards\n${shareUrl}`
+            : `✦ ${getSpreadName(activeSpread)} — Cardcaptor Sakura · Clow Cards\n${shareUrl}`;
+        await navigator.share({
+          title: `CLOW CARDS — ${getSpreadName(activeSpread)}`,
+          text: shareCaption,
+          files: [file]
         });
-
-        modalCard.style.maxHeight = prevMaxH;
-        modalCard.style.overflow = prevOverflow;
-        modalCard.scrollTop = prevScrollTop;
-        if (footerBar) footerBar.style.display = '';
-        if (closeBtn) closeBtn.style.display = '';
-
-        // วางภาพป็อปอัปจริงลงบนเฟรม IG Story (1080x1920)
-        const story = document.createElement('canvas');
-        story.width = 1080;
-        story.height = 1920;
-        const sctx = story.getContext('2d');
-        sctx.fillStyle = '#EED69A';
-        sctx.fillRect(0, 0, story.width, story.height);
-
-        const maxW = story.width - 72;
-        const maxH = story.height - 140;
-        const ratio = Math.min(maxW / shot.width, maxH / shot.height);
-        const drawW = Math.round(shot.width * ratio);
-        const drawH = Math.round(shot.height * ratio);
-        const drawX = Math.round((story.width - drawW) / 2);
-        const drawY = Math.round((story.height - drawH) / 2);
-        sctx.drawImage(shot, drawX, drawY, drawW, drawH);
-
-        blob = await new Promise((resolve) => story.toBlob(resolve, 'image/png'));
-      } catch (_) {}
+        shared = true;
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          if (triggerBtn) {
+            if (labelTarget) labelTarget.textContent = defaultLabel;
+            triggerBtn.disabled = false;
+          }
+          isSavingReadingImage = false;
+          return;
+        }
+      }
     }
 
-    if (!blob) {
-      // Fallback: วาดบน Canvas หากโหลด html2canvas ไม่สำเร็จ
-      const loadCardImg = (url) =>
-        new Promise((resolve) => {
-          if (!url) return resolve(null);
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => resolve(img);
-          img.onerror = () => resolve(null);
-          img.src = url;
-        });
-
-      const cardImages = await Promise.all(sorted.map((s) => loadCardImg(getCardFrontUrl(s.card.driveKey))));
-      const canvas = document.createElement('canvas');
-      canvas.width = 1080;
-      canvas.height = 1920;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#FCF4DC';
-      ctx.fillRect(0, 0, 1080, 1920);
-      ctx.fillStyle = '#2A160E';
-      ctx.font = 'bold 40px Charm, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(getSpreadName(activeSpread), 540, 120);
-      cardImages.forEach((img, i) => {
-        if (img) ctx.drawImage(img, 100 + (i % 3) * 300, 180 + Math.floor(i / 3) * 440, 200, 420);
-      });
-      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    }
-    const file = blob ? new File([blob], 'the-clow-summary.png', { type: 'image/png' }) : null;
-
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: `THE CLOW — ${activeSpread.name}`,
-        text: shareText,
-        files: [file]
-      });
-    } else if (blob) {
+    if (!shared) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'the-clow-summary.png';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareText).catch(() => {});
-      }
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(shareText);
     }
 
-    if (btn) {
-      btn.textContent = isEn ? '✓ Saved & copied reading' : '✓ บันทึกและคัดลอกคำทำนายแล้ว';
+    if (triggerBtn) {
+      if (labelTarget) labelTarget.textContent = shared ? t('shareSharedFeedback') : t('shareSavedFeedback');
       setTimeout(() => {
-        if (btn) btn.textContent = t('btnShareSummary');
-      }, 2600);
+        if (triggerBtn) {
+          if (labelTarget) labelTarget.textContent = isStory ? t('btnShareStory') : t('btnShareFull');
+          triggerBtn.disabled = false;
+        }
+      }, 2200);
     }
   } catch (err) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(shareText).catch(() => {});
+    console.error('[Share] Save reading image failed:', err);
+    if (triggerBtn) {
+      if (labelTarget) labelTarget.textContent = defaultLabel;
+      triggerBtn.disabled = false;
     }
-    if (btn) {
-      btn.textContent = isEn ? '✓ Copied reading' : '✓ คัดลอกคำทำนายแล้ว';
-      setTimeout(() => {
-        if (btn) btn.textContent = t('btnShareSummary');
-      }, 2600);
-    }
+  } finally {
+    isSavingReadingImage = false;
   }
+}
+
+function shareOrSaveSummary() {
+  saveReadingImage('story');
 }
 
 function closeReadingModal() {
@@ -2914,6 +2922,7 @@ Object.assign(window, {
   panSpreadCanvas,
   handlePlacedCardClick,
   shareOrSaveSummary,
+  saveReadingImage,
   toggleLanguage,
   revealAllAndOpenSummary,
   openNextUnrevealedCard,

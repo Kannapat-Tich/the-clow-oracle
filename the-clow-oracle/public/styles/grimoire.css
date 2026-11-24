@@ -634,8 +634,16 @@ html[lang="en"] .draw-row-card.is-armed::after {
 body.reading-modal-open #main-header {
   z-index: 60;
 }
+body.reading-modal-open {
+  overflow: hidden;
+}
+
 body.reading-modal-open #header-spread-pills {
   display: none !important;
+}
+
+#reading-modal .editorial-scroll {
+  overscroll-behavior: contain;
 }
 
 .center-oracle-stage {

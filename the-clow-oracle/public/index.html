@@ -26,7 +26,7 @@
   <link rel="preload" as="image" href="./assets/cards/sword.webp" />
   <link rel="preload" as="image" href="./assets/ui/clow_magic_circle.webp" />
 
-  <link rel="stylesheet" href="./styles/grimoire.css?v=20261124b" />
+  <link rel="stylesheet" href="./styles/grimoire.css?v=20261124z13" />
 </head>
 <body class="flex flex-col justify-between">
   <div class="dusty-paper-grain" aria-hidden="true"></div>
@@ -332,6 +332,12 @@
               <button id="btn-board-other-spreads" onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] whitespace-nowrap px-3.5 py-2 rounded-md text-xs font-fahkwang shrink-0 transition-colors">
                 การทำนายอื่น ๆ
               </button>
+              <button id="btn-board-share-story" onclick="saveReadingImage('story', this)"
+                      class="inline-flex items-center justify-center gap-1 text-[#523020]/85 hover:text-[#4F2031] hover:bg-[#8A5414]/10 whitespace-nowrap px-2.5 py-1.5 rounded-md text-[11px] font-fahkwang shrink-0 transition-colors"
+                      title="แชร์ภาพคำทำนาย">
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                <span id="btn-board-share-story-label">แชร์</span>
+              </button>
             </div>
           </div>
 
@@ -622,7 +628,7 @@
   <!-- READING MODAL -->
   <div id="reading-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(4.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-20 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
     <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] sm:max-h-[calc(100dvh-6.5rem)] overflow-y-auto rounded-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
-      <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-1.5 mb-1.5 bg-[#FBF1D4]/98 border-b border-[#8A5414]/45 flex items-center justify-between gap-2 backdrop-blur-[2px]">
+      <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-1.5 mb-1.5 bg-[#FBF1D4] border-b border-[#8A5414]/45 flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[#8A5414] shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
           <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.14em] uppercase text-[#4F2031] truncate">
@@ -647,7 +653,7 @@
         </button>
       </div>
 
-      <div id="reading-modal-footer-bar" class="hidden mt-3 pt-3 pb-3 border-t border-[#8A5414]/45 flex items-center justify-between gap-2">
+      <div id="reading-modal-footer-bar" class="hidden mt-3 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] border-t border-[#8A5414]/45 flex items-center justify-between gap-2">
         <div id="reading-modal-footer-actions" class="w-full flex flex-wrap items-center justify-end gap-2"></div>
       </div>
     </div>
@@ -681,6 +687,6 @@
     </div>
   </footer>
 
-  <script type="module" src="./js/app.js?v=20261124y"></script>
+  <script type="module" src="./js/app.js?v=20261124z16"></script>
 </body>
 </html>
