@@ -1052,7 +1052,6 @@ async function openCompatibilitySummaryModal() {
             <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${leftCard.name}</p>
-              ${!isEn ? `<p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>` : ''}
               <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${leftCauseText}</p>
             </div>
           </div>
@@ -1066,7 +1065,6 @@ async function openCompatibilitySummaryModal() {
             <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${rightCard.name}</p>
-              ${!isEn ? `<p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>` : ''}
               <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${rightAdviceText}</p>
             </div>
           </div>
@@ -2284,7 +2282,6 @@ async function triggerAiInterpretation() {
                      <div class="flex flex-wrap items-baseline gap-x-1.5 text-[11px] sm:text-xs">
                        <span class="font-fahkwang text-[#8A5414]">${isEn ? `✦ No. ${stepNum}` : `✦ ลำดับที่ ${stepNum}`}</span>
                        <span class="font-cinzel font-bold text-[#2A160E]">${escapeHtml(matchedSlot.card.name)}</span>
-                       ${!isEn ? `<span class="font-charm text-xs sm:text-sm text-[#4F2031]">(${escapeHtml(matchedSlot.card.thaiName)})</span>` : ''}
                      </div>
                      ${titleOnly ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">${escapeHtml(titleOnly)}</div>` : ''}
                    </div>`
