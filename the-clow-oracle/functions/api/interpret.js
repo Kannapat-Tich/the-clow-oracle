@@ -201,13 +201,13 @@ async function discoverActiveFlashModels(apiKey) {
       )
       .map((m) => m.name.replace(/^models\//, ''));
 
-    // จัดลำดับความสำคัญ: Flash รุ่นใหม่สุดก่อน แล้วค่อย Flash-Lite และรุ่นอื่น
+    // จัดลำดับความสำคัญ: ให้ Flash-Lite รุ่นใหม่สุดมาก่อน (ตอบเร็ว 1-2 วินาที ไม่ติด 503/Timeout) ตามด้วย Flash รุ่นใหม่สุด
     usable.sort((a, b) => {
       const score = (id) => {
         let s = 0;
         if (/flash/i.test(id)) s += 100;
-        if (/lite/i.test(id)) s -= 10;
-        if (/latest/i.test(id)) s += 20;
+        if (/lite/i.test(id)) s += 40;
+        if (/latest/i.test(id)) s += 15;
         if (/exp|preview/i.test(id)) s -= 5;
         const ver = id.match(/gemini-(\d+(?:\.\d+)?)/i);
         if (ver) s += parseFloat(ver[1]) * 10;
@@ -227,17 +227,20 @@ async function discoverActiveFlashModels(apiKey) {
   }
 }
 
-async function callGemini(apiKey, model, prompt) {
+async function callGemini(apiKey, model, prompt, useThinkingZero = true) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const generationConfig = {
     temperature: 0.75,
     maxOutputTokens: 6144,
     responseMimeType: 'application/json'
   };
+  if (useThinkingZero) {
+    generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(12000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -245,6 +248,9 @@ async function callGemini(apiKey, model, prompt) {
       })
     });
 
+    if (res.status === 400 && useThinkingZero) {
+      return callGemini(apiKey, model, prompt, false);
+    }
     if (res.status === 429) {
       return { quotaExceeded: true, error: `${model}: HTTP 429` };
     }
