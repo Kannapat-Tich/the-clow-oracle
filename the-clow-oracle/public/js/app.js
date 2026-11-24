@@ -18,7 +18,7 @@ import {
   playCardFlipSound,
   playRapidRiffleSound
 } from './audio.js?v=20261124u';
-import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124u';
+import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124w';
 import { trackEvent, hasAnalyticsConsent, grantAnalyticsConsent } from './analytics.js';
 import {
   applyLanguage,
@@ -1594,8 +1594,8 @@ function pickCardFromDeck(deckIdx) {
     const deckPanel = document.getElementById('deck-stage-panel');
     deckPanel.classList.add('hidden');
 
-    // เริ่มประมวลผล AI ล่วงหน้าทันทีที่วางไพ่ครบ (ใช้โควต้าเพียง 1 ครั้ง และแชร์ผลตั้งแต่เปิดไพ่ใบแรกจนถึงบทสรุป)
-    if ((userSecretQuestion && userSecretQuestion.trim()) || getCurrentLang() === 'en') {
+    // เริ่มประมวลผล AI ล่วงหน้าทันทีที่วางไพ่ครบ (เมื่อมีคำถามใช้ AI โควต้า 1 ครั้ง · ถ้าไม่มีคำถามโหลดฐานข้อมูล EN/TH 0ms ทันที)
+    if (userSecretQuestion && userSecretQuestion.trim()) {
       requestAiInterpretation({
         spread: activeSpread,
         question: userSecretQuestion,

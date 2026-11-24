@@ -485,6 +485,80 @@ export async function requestAiInterpretation({ spread, question, drawnCards, la
     } catch (_) {}
   }
 
+  // Romance Reading (English, no question): dynamically load English curated Romance DB (52 x 7 = 364 readings)
+  if (spread && spread.spread_id === 'love_cross' && lang === 'en' && !cleanQuestion && drawnCards.length > 0) {
+    try {
+      const mod = await import('../data/en/romance-readings.js');
+      const db = mod?.ROMANCE_READINGS_EN;
+      if (db) {
+        const sorted = [...drawnCards].sort((a, b) => a.posIndex - b.posIndex);
+        const connections = sorted.map((slot) => {
+          const pos = spread.positions.find((p) => p.index === slot.posIndex);
+          const posTitle = getPosTitle(spread.spread_id, pos) || `Position ${slot.posIndex}`;
+          const text = db[slot.card.id]?.[slot.posIndex] || slot.card.meaning || '';
+          return {
+            positionIndex: slot.posIndex,
+            positionTitle: posTitle,
+            cardName: slot.card.name,
+            insight: text,
+            detailInsight: text
+          };
+        });
+        const adviceText =
+          connections.find((c) => c.positionIndex === 7)?.insight ||
+          connections.find((c) => c.positionIndex === 5)?.insight ||
+          '';
+        const curatedRomanceEn = {
+          mode: 'curated',
+          provider: 'Clow Romance Oracle (EN)',
+          overview: connections.map((c) => c.insight).slice(0, 2).join(' '),
+          connections,
+          advice: adviceText ? [adviceText] : [],
+          closing: 'Lasting love grows from gentle understanding and an open heart—may the Clow Cards softly light your way.'
+        };
+        readingCache.set(cacheKey, curatedRomanceEn);
+        return curatedRomanceEn;
+      }
+    } catch (_) {}
+  }
+
+  // General Reading (English, no question): dynamically load English curated General DB (52 x 10 = 520 readings)
+  if (spread && spread.spread_id === 'general_six' && lang === 'en' && !cleanQuestion && drawnCards.length > 0) {
+    try {
+      const mod = await import('../data/en/general-readings.js');
+      const db = mod?.GENERAL_READINGS_EN;
+      if (db) {
+        const sorted = [...drawnCards].sort((a, b) => a.posIndex - b.posIndex);
+        const connections = sorted.map((slot) => {
+          const pos = spread.positions.find((p) => p.index === slot.posIndex);
+          const posTitle = getPosTitle(spread.spread_id, pos) || `Position ${slot.posIndex}`;
+          const text = db[slot.card.id]?.[slot.posIndex] || slot.card.meaning || '';
+          return {
+            positionIndex: slot.posIndex,
+            positionTitle: posTitle,
+            cardName: slot.card.name,
+            insight: text,
+            detailInsight: text
+          };
+        });
+        const adviceText =
+          connections.find((c) => c.positionIndex === 6)?.insight ||
+          connections.find((c) => c.positionIndex === 7)?.insight ||
+          '';
+        const curatedGeneralEn = {
+          mode: 'curated',
+          provider: 'Clow General Oracle (EN)',
+          overview: connections.map((c) => c.insight).slice(0, 2).join(' '),
+          connections,
+          advice: adviceText ? [adviceText] : [],
+          closing: 'Every path holds its own quiet rhythm and answer—may the Clow Cards shine softly beside your steps.'
+        };
+        readingCache.set(cacheKey, curatedGeneralEn);
+        return curatedGeneralEn;
+      }
+    } catch (_) {}
+  }
+
   // โหมดทำนายความรักและชีวิตคู่ (ภาษาไทย ไม่ฝากคำถาม): ดึงจากฐานข้อมูลคำทำนายความรัก 364 ตำแหน่งโดยตรง (0ms ไม่เปลืองโควต้า AI)
   if (spread && spread.spread_id === 'love_cross' && lang === 'th' && !cleanQuestion && drawnCards.length > 0) {
     const curatedRomance = buildCuratedRomanceReading(spread, drawnCards);

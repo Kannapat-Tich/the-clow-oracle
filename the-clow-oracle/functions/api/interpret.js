@@ -15,7 +15,9 @@ import { SPREADS_DATA } from '../../public/data/spreads.js';
 import { DAILY_READINGS } from '../../public/data/daily-readings.js';
 import { DAILY_READINGS_EN } from '../../public/data/en/daily-readings.js';
 import { ROMANCE_READINGS_DETAIL } from '../../public/data/romance-readings-detail.js';
+import { ROMANCE_READINGS_EN } from '../../public/data/en/romance-readings.js';
 import { GENERAL_READINGS_DETAIL } from '../../public/data/general-readings-detail.js';
+import { GENERAL_READINGS_EN } from '../../public/data/en/general-readings.js';
 
 const CARD_BY_ID = new Map(CARDS_DATA.map((c) => [c.id, c]));
 const SPREAD_BY_ID = new Map(SPREADS_DATA.map((s) => [s.spread_id, s]));
@@ -63,12 +65,14 @@ function getCuratedPositionReading(spreadId, card, posIndex, lang = 'th') {
       };
     }
   } else if (spreadId === 'love_cross') {
-    const posText = ROMANCE_READINGS_DETAIL[card.id]?.[posIndex];
+    const posText =
+      lang === 'en' ? ROMANCE_READINGS_EN[card.id]?.[posIndex] : ROMANCE_READINGS_DETAIL[card.id]?.[posIndex];
     if (posText) {
       return { reading: posText, advice: card.warning };
     }
   } else if (spreadId === 'general_six') {
-    const posText = GENERAL_READINGS_DETAIL[card.id]?.[posIndex];
+    const posText =
+      lang === 'en' ? GENERAL_READINGS_EN[card.id]?.[posIndex] : GENERAL_READINGS_DETAIL[card.id]?.[posIndex];
     if (posText) {
       return { reading: posText, advice: card.warning };
     }
