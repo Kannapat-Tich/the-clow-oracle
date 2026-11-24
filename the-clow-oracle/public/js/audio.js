@@ -12,7 +12,7 @@ let audioCtx = null;
 const isSoundOn = true;
 
 let isBgmPlaying = true;
-let currentBgmTrackIdx = 0;
+let currentBgmTrackIdx = BGM_TRACKS.length > 0 ? Math.floor(Math.random() * BGM_TRACKS.length) : 0;
 let bgmFadeTimer = null;
 let pendingAutoplayUnlock = false;
 let unlockListenersAttached = false;
@@ -83,7 +83,15 @@ function getBgmPlayer() {
     player.dataset.boundEnded = '1';
     player.addEventListener('ended', () => {
       if (isBgmPlaying && BGM_TRACKS.length > 0) {
-        currentBgmTrackIdx = (currentBgmTrackIdx + 1) % BGM_TRACKS.length;
+        if (BGM_TRACKS.length > 1) {
+          let nextIdx = currentBgmTrackIdx;
+          while (nextIdx === currentBgmTrackIdx) {
+            nextIdx = Math.floor(Math.random() * BGM_TRACKS.length);
+          }
+          currentBgmTrackIdx = nextIdx;
+        } else {
+          currentBgmTrackIdx = 0;
+        }
         startBgmPlayback();
       }
     });

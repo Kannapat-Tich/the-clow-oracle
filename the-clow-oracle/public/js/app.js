@@ -17,7 +17,7 @@ import {
   playSoftPaperRustle,
   playCardFlipSound,
   playRapidRiffleSound
-} from './audio.js?v=20261124r';
+} from './audio.js?v=20261124s';
 import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124r';
 import { trackEvent, hasAnalyticsConsent, grantAnalyticsConsent } from './analytics.js';
 import {
@@ -1272,10 +1272,7 @@ function selectSpread(spreadId) {
   document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
   const bannerIcon = document.getElementById('table-banner-icon');
   if (bannerIcon) {
-    bannerIcon.innerHTML =
-      activeSpread.spread_id === 'love_cross'
-        ? '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.33-8.22C.9 10.17 1.7 6.3 5 4.8a5.2 5.2 0 0 1 6.1 1.35L12 7.2l.9-1.05A5.2 5.2 0 0 1 19 4.8c3.3 1.5 4.1 5.37 2.33 7.98C18.7 16.65 12 21 12 21Z"/></svg>'
-        : '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg>';
+    bannerIcon.innerHTML = getSpreadIconSVG(activeSpread.spread_id);
   }
   trackEvent('spread_start', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name });
 
@@ -1284,6 +1281,23 @@ function selectSpread(spreadId) {
   if (activeSpread.ritualNoticeBody) {
     openRitualFocusModal(activeSpread);
   }
+}
+
+function getSpreadIconSVG(spreadId) {
+  if (spreadId === 'daily_single') {
+    // ดวงอาทิตย์ — ทำนายดวงรายวัน
+    return '<svg viewBox="0 0 24 24" class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"/></svg>';
+  }
+  if (spreadId === 'love_cross') {
+    // หัวใจ — ทำนายความรักและชีวิตคู่
+    return '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.33-8.22C.9 10.17 1.7 6.3 5 4.8a5.2 5.2 0 0 1 6.1 1.35L12 7.2l.9-1.05A5.2 5.2 0 0 1 19 4.8c3.3 1.5 4.1 5.37 2.33 7.98C18.7 16.65 12 21 12 21Z"/></svg>';
+  }
+  if (spreadId === 'compatibility_52') {
+    // วงแหวนสองวงคล้องกัน — ทำนายระดับความเข้ากัน
+    return '<svg viewBox="0 0 24 24" class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg>';
+  }
+  // ดาวนำทาง 4 แฉก — ทำนายเรื่องทั่วไป
+  return '<svg viewBox="0 0 24 24" class="w-4 h-4 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 2l2.35 7.65L22 12l-7.65 2.35L12 22l-2.35-7.65L2 12l7.65-2.35L12 2Z"/></svg>';
 }
 
 function openRitualFocusModal(spread) {
@@ -2558,7 +2572,7 @@ function scheduleModalScrollControlsHide() {
   modalScrollAutoHideTimer = setTimeout(() => {
     isModalScrollControlsVisible = false;
     updateModalScrollButtons();
-  }, 3000);
+  }, 2000);
 }
 
 function showModalScrollControlsTemporarily() {
@@ -2913,13 +2927,10 @@ function toggleLanguage() {
   initSpreadNavigation();
   if (activeSpread) {
     document.getElementById('table-spread-title').textContent = getSpreadName(activeSpread);
-  const bannerIcon = document.getElementById('table-banner-icon');
-  if (bannerIcon) {
-    bannerIcon.innerHTML =
-      activeSpread.spread_id === 'love_cross'
-        ? '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.33-8.22C.9 10.17 1.7 6.3 5 4.8a5.2 5.2 0 0 1 6.1 1.35L12 7.2l.9-1.05A5.2 5.2 0 0 1 19 4.8c3.3 1.5 4.1 5.37 2.33 7.98C18.7 16.65 12 21 12 21Z"/></svg>'
-        : '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 inline-block" fill="currentColor" aria-hidden="true"><path d="M12.3 3a9 9 0 1 0 8.7 11.4A7.5 7.5 0 0 1 12.3 3Z"/></svg>';
-  }
+    const bannerIcon = document.getElementById('table-banner-icon');
+    if (bannerIcon) {
+      bannerIcon.innerHTML = getSpreadIconSVG(activeSpread.spread_id);
+    }
     updateRitualPhaseBadges(ritualPhase);
     updateQuestionAiStatusNote();
     const qInput = document.getElementById('user-question-input');
