@@ -17,8 +17,8 @@ import {
   playSoftPaperRustle,
   playCardFlipSound,
   playRapidRiffleSound
-} from './audio.js';
-import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js';
+} from './audio.js?v=20261124r';
+import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124r';
 import { trackEvent, hasAnalyticsConsent, grantAnalyticsConsent } from './analytics.js';
 import {
   applyLanguage,
@@ -27,10 +27,12 @@ import {
   t,
   getSpreadName,
   getSpreadPurpose,
+  getSpreadTopicTags,
+  getSpreadRitualNotice,
   getSpreadPlaceholder,
   getPosTitle,
   getPosMeaning
-} from './i18n.js';
+} from './i18n.js?v=20261124r';
 
 /**
  * =========================================================================
@@ -346,8 +348,8 @@ function updateRitualPhaseBadges(phase) {
 
   const hasQuestionStep = Boolean(activeSpread.requiresQuestionPrompt);
   const needsCut = activeSpread.card_count > 1;
-  const activeCls = 'whitespace-nowrap px-1.5 sm:px-2.5 py-0.5 rounded bg-[#EBB844] text-[#2A160E] border border-[#4A1F12]';
-  const inactiveCls = 'whitespace-nowrap px-1.5 sm:px-2.5 py-0.5 rounded bg-[#FCF4DC] text-[#523020] border border-[#8A5414]/45';
+  const activeCls = 'whitespace-nowrap text-center leading-tight px-1.5 sm:px-2.5 py-0.5 rounded bg-[#EBB844] text-[#2A160E] border border-[#4A1F12]';
+  const inactiveCls = 'whitespace-nowrap text-center leading-tight px-1.5 sm:px-2.5 py-0.5 rounded bg-[#FCF4DC] text-[#523020] border border-[#8A5414]/45';
   const sep = '<span class="text-[#8A5414] shrink-0">-</span>';
 
   if (hasQuestionStep && needsCut) {
@@ -370,9 +372,9 @@ function updateRitualPhaseBadges(phase) {
     `;
   } else {
     bar.innerHTML = `
-      <span class="${phase === 'shuffle' ? activeCls : inactiveCls}">ตั้งจิตสับไพ่</span>
+      <span class="${phase === 'shuffle' ? activeCls : inactiveCls}">${t('stepperShuffleAlt')}</span>
       ${sep}
-      <span class="${phase === 'draw' ? activeCls : inactiveCls}">เลือกไพ่</span>
+      <span class="${phase === 'draw' ? activeCls : inactiveCls}">${t('stepperDraw')}</span>
     `;
   }
 }
@@ -424,16 +426,16 @@ function enterQuestionStage() {
   document.getElementById('docked-resting-deck').classList.add('hidden');
 
   const qInput = document.getElementById('user-question-input');
-  if (qInput && activeSpread.questionPlaceholder) {
-    qInput.placeholder = activeSpread.questionPlaceholder;
+  if (qInput) {
+    qInput.placeholder = getSpreadPlaceholder(activeSpread) || '';
   }
 
   updateRitualPhaseBadges('question');
   setTableProgressText('');
+  updateQuestionCharCounter();
   updateQuestionAiStatusNote();
-  document.getElementById('deck-instruction-title').textContent = 'ตั้งจิตและบอกเล่าเรื่องราว (ข้ามได้)';
-  document.getElementById('deck-instruction-sub').textContent =
-    'การเรียบเรียงเรื่องราวหรือคำถามที่อยู่ในใจให้ชัดเจน จะช่วยให้คำทำนายเชื่อมโยงกับสิ่งที่คุณอยากรู้ได้ตรงจุดมากขึ้น';
+  document.getElementById('deck-instruction-title').textContent = t('questionTitle');
+  document.getElementById('deck-instruction-sub').textContent = t('questionSub');
 
   triggerPageFade(deckPanel);
   scrollToTopSmooth();
@@ -447,7 +449,10 @@ function updateQuestionAiStatusNote() {
     const remainMs = until - Date.now();
     if (remainMs > 0) {
       const mins = Math.max(1, Math.ceil(remainMs / 60000));
-      noteEl.innerHTML = `✦ ขณะนี้โควตาผู้ช่วยตีความเต็มชั่วคราว (ใช้งานได้อีกครั้งในอีกประมาณ <strong>${mins} นาที</strong>) — ยังสามารถเปิดไพ่และรับคำทำนายจาก <strong>ตำราไพ่โคลว์</strong> ได้ตามปกติ`;
+      const isEn = getCurrentLang() === 'en';
+      noteEl.innerHTML = isEn
+        ? `✦ Our free AI reader quota is resting for about <strong>${mins} min</strong> — you can still draw cards and enjoy your full <strong>Clow Guidebook</strong> reading.`
+        : `✦ ขณะนี้โควตาผู้ช่วยตีความเต็มชั่วคราว (ใช้งานได้อีกครั้งในอีกประมาณ <strong>${mins} นาที</strong>) — ยังสามารถเปิดไพ่และรับคำทำนายจาก <strong>ตำราไพ่โคลว์</strong> ได้ตามปกติ`;
       noteEl.classList.remove('hidden');
       return;
     }
@@ -465,11 +470,50 @@ function updateQuestionCharCounter() {
   counterEl.textContent = getCurrentLang() === 'en' ? `${len} / ${max} chars` : `${len} / ${max} ตัวอักษร`;
   counterEl.classList.toggle('text-[#9F1239]', len >= max - 40);
   counterEl.classList.toggle('text-[#8A5414]', len < max - 40);
+
+  const hasText = qInput.value.trim().length > 0;
+  const disabledClasses = [
+    'bg-[#D6D3CD]',
+    'text-[#7A756D]',
+    'border',
+    'border-[#B8B3AA]',
+    'cursor-not-allowed',
+    'opacity-85'
+  ];
+
+  const submitBtn = document.getElementById('btn-submit-question');
+  if (submitBtn) {
+    submitBtn.disabled = !hasText;
+    if (hasText) {
+      submitBtn.removeAttribute('aria-disabled');
+      submitBtn.classList.add('btn-vintage-primary');
+      submitBtn.classList.remove(...disabledClasses);
+    } else {
+      submitBtn.setAttribute('aria-disabled', 'true');
+      submitBtn.classList.remove('btn-vintage-primary');
+      submitBtn.classList.add(...disabledClasses);
+    }
+  }
+
+  const skipBtn = document.getElementById('btn-skip-question');
+  if (skipBtn) {
+    skipBtn.disabled = hasText;
+    if (hasText) {
+      skipBtn.setAttribute('aria-disabled', 'true');
+      skipBtn.classList.remove('btn-vintage-secondary');
+      skipBtn.classList.add(...disabledClasses);
+    } else {
+      skipBtn.removeAttribute('aria-disabled');
+      skipBtn.classList.add('btn-vintage-secondary');
+      skipBtn.classList.remove(...disabledClasses);
+    }
+  }
 }
 
 function skipQuestionStep() {
-  userSecretQuestion = '';
   const qInput = document.getElementById('user-question-input');
+  if (qInput && qInput.value.trim().length > 0) return;
+  userSecretQuestion = '';
   if (qInput) {
     qInput.value = '';
     if (!qInput.dataset.boundCounter) {
@@ -478,13 +522,14 @@ function skipQuestionStep() {
     }
     updateQuestionCharCounter();
   }
-  updateQuestionCharCounter();
   enterRitualShuffleStage();
 }
 
 function submitQuestionStep() {
   const qInput = document.getElementById('user-question-input');
-  userSecretQuestion = qInput ? qInput.value.trim() : '';
+  const text = qInput ? qInput.value.trim() : '';
+  if (!text) return;
+  userSecretQuestion = text;
   enterRitualShuffleStage();
 }
 
@@ -519,18 +564,18 @@ function enterRitualShuffleStage() {
 
   const needsCut = activeSpread.card_count > 1;
   const proceedBtn = document.getElementById('btn-proceed-next');
-  proceedBtn.textContent = needsCut
-    ? '✦ พอใจแล้ว · ไปตัดกองไพ่'
-    : '✦ พอใจแล้ว · ไปเลือกไพ่';
+  proceedBtn.textContent = needsCut ? t('btnProceedCut') : t('btnProceedDraw');
   proceedBtn.disabled = true;
   proceedBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
   updateRitualPhaseBadges('shuffle');
   setTableProgressText('');
-  document.getElementById('shuffle-counter-badge').textContent = 'สับไพ่ไปแล้ว 0 ครั้ง';
-  document.getElementById('deck-instruction-title').textContent = 'ตั้งจิตและสับสำรับไพ่';
-  document.getElementById('deck-instruction-sub').textContent =
-    'การสับไพ่คือการรวบรวมสมาธิและฝากคำถามลงสู่สำรับ แตะที่กองไพ่ซ้ำๆ จนกว่าจะรู้สึกพร้อม';
+  const isEn = getCurrentLang() === 'en';
+  document.getElementById('shuffle-counter-badge').textContent = isEn
+    ? 'Shuffled 0 times'
+    : 'สับไพ่ไปแล้ว 0 ครั้ง';
+  document.getElementById('deck-instruction-title').textContent = t('shuffleTitle');
+  document.getElementById('deck-instruction-sub').textContent = t('shuffleSub');
 
   const zone = document.getElementById('interactive-deck-touchzone');
   if (zone) {
@@ -576,7 +621,12 @@ function proceedFromShuffle() {
   if (isAnimatingRitual) return;
   if (shuffleCount < 1) {
     const sub = document.getElementById('deck-instruction-sub');
-    if (sub) sub.textContent = 'ลองแตะสับไพ่อย่างน้อย 1 ครั้งเพื่อรวบรวมสมาธิก่อนเริ่มพิธีกรรม';
+    if (sub) {
+      sub.textContent =
+        getCurrentLang() === 'en'
+          ? 'Please tap to shuffle the deck at least once to focus your mind first.'
+          : 'ลองแตะสับไพ่อย่างน้อย 1 ครั้งเพื่อรวบรวมสมาธิก่อนเริ่มพิธีกรรม';
+    }
     return;
   }
   if (activeSpread.card_count > 1) enterDeckCutStage();
@@ -604,9 +654,8 @@ function enterDeckCutStage() {
   document.getElementById('cut-bottom-card').innerHTML = buildMinimalCardBackSVG();
 
   setTableProgressText('');
-  document.getElementById('deck-instruction-title').textContent = 'ตัดแบ่งครึ่งกองไพ่';
-  document.getElementById('deck-instruction-sub').textContent =
-    'การตัดไพ่คือการปิดรับคำถามและรวมพลังสมาธิ แตะที่กองไพ่เพื่อแบ่งครึ่งสำรับและสลับวางซ้อนกันก่อนเปิดไพ่';
+  document.getElementById('deck-instruction-title').textContent = t('cutTitle');
+  document.getElementById('deck-instruction-sub').textContent = t('cutSub');
 
   const deckPanel = document.getElementById('deck-stage-panel');
   triggerPageFade(deckPanel);
@@ -624,7 +673,9 @@ function performDeckCut() {
 
   document.getElementById('btn-trigger-cut').disabled = true;
   document.getElementById('deck-instruction-sub').textContent =
-    'กำลังยกกองครึ่งบนวางทางขวา และนำกองครึ่งล่างซ้อนทับด้านบน...';
+    getCurrentLang() === 'en'
+      ? 'Lifting the top half aside and placing the bottom half on top...'
+      : 'กำลังยกกองครึ่งบนวางทางขวา และนำกองครึ่งล่างซ้อนทับด้านบน...';
 
   const cutZone = document.getElementById('cut-deck-touchzone');
   cutZone.classList.remove('is-cutting');
@@ -667,47 +718,58 @@ function getCardSuitGroup(card) {
 }
 
 function getCompatibilityTier(remainingCount) {
+  const isEn = getCurrentLang() === 'en';
   if (remainingCount <= 10) {
     return {
-      title: 'เข้ากันได้ดีมาก',
-      range: '0 – 10 ใบ',
+      title: isEn ? 'Effortless Connection' : 'เข้ากันได้อย่างลงตัว',
+      range: isEn ? '0 – 10 cards' : '0 – 10 ใบ',
       stars: 5,
-      desc: 'ความเข้ากันได้อยู่ในระดับยอดเยี่ยม ความสัมพันธ์ราบรื่นและเกื้อหนุนกันอย่างเป็นธรรมชาติ',
+      desc: isEn
+        ? 'Your hearts and energies flow in easy harmony—a bright, supportive bond that feels truly natural.'
+        : 'ดวงชะตาสอดประสานกันอย่างเป็นธรรมชาติ ความสัมพันธ์เต็มไปด้วยความอบอุ่นและแรงเกื้อหนุนซึ่งกันและกัน',
       badgeCls: 'text-[#4A2508] bg-[#F8E7B4]/90 border-[#B47B1E]/75'
     };
   }
   if (remainingCount <= 20) {
     return {
-      title: 'เข้ากันได้ค่อนข้างดี',
-      range: '11 – 20 ใบ',
+      title: isEn ? 'Easy Understanding' : 'สบายใจและเข้าขากันได้ดี',
+      range: isEn ? '11 – 20 cards' : '11 – 20 ใบ',
       stars: 4,
-      desc: 'มีพลังบวกและความเข้าใจที่ดีต่อกัน หากเปิดใจสื่อสารจะยิ่งสนิทและมั่นคงมากขึ้น',
+      desc: isEn
+        ? 'You share gentle warmth and easy understanding. Open, honest moments together will draw you even closer.'
+        : 'มีพลังบวกและความเข้าใจอันดีต่อกัน ยิ่งเปิดใจรับฟังและแบ่งปันเรื่องราว สายสัมพันธ์ก็ยิ่งมั่นคงงดงาม',
       badgeCls: 'text-[#3B2A14] bg-[#F4E9C9]/90 border-[#8A6D3B]/70'
     };
   }
   if (remainingCount <= 30) {
     return {
-      title: 'เข้ากันได้ระดับปานกลาง',
-      range: '21 – 30 ใบ',
+      title: isEn ? 'Balanced & Steady' : 'สมดุลและปรับตัวกันได้',
+      range: isEn ? '21 – 30 cards' : '21 – 30 ใบ',
       stars: 3,
-      desc: 'ความสัมพันธ์อยู่ในเกณฑ์ปกติ มีทั้งจุดที่ลงตัวและจุดที่ต้องค่อยๆ ปรับจูนเข้าหากัน',
+      desc: isEn
+        ? 'A calm, steady connection with moments that naturally click and a few differences you can grow through together.'
+        : 'ความสัมพันธ์อยู่ในสมดุลที่งดงาม มีทั้งมุมที่เข้าขากันและมุมที่ต่างกันให้ค่อย ๆ เรียนรู้และเติบโตไปด้วยกัน',
       badgeCls: 'text-[#4A2B15] bg-[#F5E6C4]/85 border-[#9A6B2F]/65'
     };
   }
   if (remainingCount <= 40) {
     return {
-      title: 'เข้ากันได้ค่อนข้างน้อย',
-      range: '31 – 40 ใบ',
+      title: isEn ? 'Different Perspectives' : 'ยังต่างคิดต่างมุมมอง',
+      range: isEn ? '31 – 40 cards' : '31 – 40 ใบ',
       stars: 2,
-      desc: 'อาจมีมุมมองหรือจังหวะชีวิตที่ต่างกันบ้าง ควรใช้ความใจเย็นและหลีกเลี่ยงการด่วนตัดสิน',
+      desc: isEn
+        ? 'You move at slightly different paces and see things from your own angles. Calm patience and kind listening will bridge the gap.'
+        : 'ต่างฝ่ายอาจมีมุมมองหรือจังหวะชีวิตที่ต่างกันบ้าง หากใช้ความใจเย็นและรับฟังกันด้วยความอ่อนโยนจะช่วยลดช่องว่างได้ดี',
       badgeCls: 'text-[#5C2415] bg-[#F2DFC8]/90 border-[#9A4B2E]/65'
     };
   }
   return {
-    title: 'ไม่ค่อยเข้ากันนัก',
-    range: '41 – 50 ใบ',
+    title: isEn ? 'Patience & Understanding' : 'ต้องอาศัยความอดทนและเข้าใจ',
+    range: isEn ? '41 – 52 cards' : '41 – 52 ใบ',
     stars: 1,
-    desc: 'มีแรงต้านหรือความต่างค่อนข้างสูง ต้องอาศัยความอดทน ความยืดหยุ่น และการสื่อสารที่นุ่มนวลเป็นพิเศษ',
+    desc: isEn
+      ? 'Your natures pull in very different directions. Extra patience, flexibility, and gentle words will be the key to understanding each other.'
+      : 'มีความต่างและแรงต้านค่อนข้างชัด ต้องอาศัยความอดทน ความยืดหยุ่น และถ้อยคำที่นุ่มนวลเพื่อประคองความเข้าใจต่อกัน',
     badgeCls: 'text-[#4F2031] bg-[#EFE0DF]/90 border-[#7A3548]/65'
   };
 }
@@ -725,38 +787,44 @@ function findAdjacentSuitPairs(cards) {
 }
 
 function updateCompatibilityHeaderUI(scanIndex = -1) {
+  const isEn = getCurrentLang() === 'en';
   const boardHint = document.getElementById('board-stage-hint');
   const statusPill = document.getElementById('compat-scan-pill');
   const remainEl = document.getElementById('compat-remain-count');
-  const pairsEl = document.getElementById('compat-pairs-count');
+  const pairsWrapEl = document.getElementById('compat-pairs-wrap');
   const actionWrap = document.getElementById('compat-action-btn-wrap');
   const curtain = document.getElementById('compat-curtain-overlay');
 
   const remain = compatCards.length;
   const tier = getCompatibilityTier(remain);
-  const currentCardNo = scanIndex >= 0 && scanIndex < remain ? scanIndex + 1 : remain;
 
   if (boardHint) {
     boardHint.textContent = compatFinished
-      ? `คัดไพ่เสร็จสมบูรณ์ · เหลือไพ่ ${remain} ใบ (${tier.title})`
+      ? isEn
+        ? `Done · ${remain} ${remain === 1 ? 'card' : 'cards'} left (${tier.title})`
+        : `คัดไพ่เสร็จสมบูรณ์ · เหลือไพ่ ${remain} ใบ (${tier.title})`
       : '';
   }
   if (statusPill) {
     if (!compatFinished && remain > 0) {
-      statusPill.textContent = '✦ กำลังคัดไพ่ออก...';
+      statusPill.textContent = isEn ? '✦ Pairing cards...' : '✦ กำลังคัดไพ่ออก...';
       statusPill.classList.remove('hidden');
     } else {
       statusPill.classList.add('hidden');
     }
   }
   if (remainEl) remainEl.textContent = String(remain);
-  if (pairsEl) pairsEl.textContent = String(compatEliminatedPairs);
+  if (pairsWrapEl) {
+    pairsWrapEl.innerHTML = isEn
+      ? `(<span id="compat-pairs-count">${compatEliminatedPairs}</span> ${compatEliminatedPairs === 1 ? 'pair' : 'pairs'} cleared)`
+      : `(คัดออกแล้ว <span id="compat-pairs-count">${compatEliminatedPairs}</span> คู่)`;
+  }
   if (curtain) {
     curtain.classList.toggle('opacity-0', compatFinished);
     curtain.classList.toggle('pointer-events-none', compatFinished);
   }
   if (actionWrap && compatFinished) {
-    actionWrap.innerHTML = `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">✦ ดูบทสรุปความเข้ากันได้</button>`;
+    actionWrap.innerHTML = `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">${isEn ? '✦ View Result' : '✦ ดูผลความเข้ากันได้'}</button>`;
   }
 }
 
@@ -769,6 +837,7 @@ function renderCompatibilityCanvas(scanIndex = -1, matchedPairIndices = new Set(
     guideText.parentElement.classList.add('hidden');
   }
 
+  const isEn = getCurrentLang() === 'en';
   const remain = compatCards.length;
   const cardsHtml = compatCards.length
     ? compatCards
@@ -780,34 +849,34 @@ function renderCompatibilityCanvas(scanIndex = -1, matchedPairIndices = new Set(
             <div data-compat-card="${card.id}"
                  style="transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.36s ease, width 0.36s ease, margin 0.36s ease;"
                  class="compat-card-item relative -ml-3.5 sm:-ml-4 first:ml-0 w-12 sm:w-16 md:w-[70px] shrink-0 rounded-md ${ringCls}"
-                 title="${card.name} — ${card.thaiName} (${getCardSuitGroup(card).label})">
+                 title="${isEn ? card.name : `${card.name} — ${card.thaiName} (${getCardSuitGroup(card).label})`}">
               ${buildMinimalCardFrontHTML(card)}
               ${
                 isLeftmost
-                  ? '<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#4F2031] text-[#FFF7DE] text-[8px] font-fahkwang shadow">ซ้ายสุด</span>'
+                  ? `<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#4F2031] text-[#FFF7DE] text-[8px] font-fahkwang shadow">${isEn ? 'Leftmost' : 'ซ้ายสุด'}</span>`
                   : isRightmost
-                    ? '<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#8A5414] text-[#FFF7DE] text-[8px] font-fahkwang shadow">ขวาสุด</span>'
+                    ? `<span class="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded bg-[#8A5414] text-[#FFF7DE] text-[8px] font-fahkwang shadow">${isEn ? 'Rightmost' : 'ขวาสุด'}</span>`
                     : ''
               }
             </div>
           `;
         })
         .join('')
-    : `<div class="py-6 text-center font-charm text-lg text-[#4F2031]">✦ ตัดคู่ไพ่ครบทั้ง 52 ใบ ไม่มีไพ่เหลือ — เข้ากันได้อย่างสมบูรณ์แบบ! ✦</div>`;
+    : `<div class="py-6 text-center font-charm text-lg text-[#4F2031]">${isEn ? '✦ All 52 cards paired with zero left — a perfect match! ✦' : '✦ ตัดคู่ไพ่ครบทั้ง 52 ใบ ไม่มีไพ่เหลือ — เข้ากันได้อย่างสมบูรณ์แบบ! ✦'}</div>`;
 
   wrapper.innerHTML = `
     <div class="space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2 bg-[#FCF4DC]/85 border border-[#8A5414]/40 rounded-lg px-3 py-2">
         <div class="flex flex-wrap items-center gap-2 text-xs font-fahkwang text-[#2A160E]">
-          <span id="compat-scan-pill" class="${!compatFinished ? '' : 'hidden'} px-2.5 py-0.5 rounded-full bg-[#4F2031]/10 border border-[#4F2031]/35 text-[#4F2031]">✦ กำลังคัดไพ่ออก...</span>
-          <span>เหลือไพ่ <strong id="compat-remain-count" class="text-[#4F2031]">${remain}</strong> / 52 ใบ</span>
-          <span class="text-[#523020]">(คัดออกแล้ว <span id="compat-pairs-count">${compatEliminatedPairs}</span> คู่)</span>
+          <span id="compat-scan-pill" class="${!compatFinished ? '' : 'hidden'} px-2.5 py-0.5 rounded-full bg-[#4F2031]/10 border border-[#4F2031]/35 text-[#4F2031]">${isEn ? '✦ Pairing cards...' : '✦ กำลังคัดไพ่ออก...'}</span>
+          <span>${isEn ? `Cards left <strong id="compat-remain-count" class="text-[#4F2031]">${remain}</strong> / 52` : `เหลือไพ่ <strong id="compat-remain-count" class="text-[#4F2031]">${remain}</strong> / 52 ใบ`}</span>
+          <span id="compat-pairs-wrap" class="text-[#523020]">${isEn ? `(<span id="compat-pairs-count">${compatEliminatedPairs}</span> ${compatEliminatedPairs === 1 ? 'pair' : 'pairs'} cleared)` : `(คัดออกแล้ว <span id="compat-pairs-count">${compatEliminatedPairs}</span> คู่)`}</span>
         </div>
         <div id="compat-action-btn-wrap">
           ${
             compatFinished
-              ? `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">✦ ดูบทสรุปความเข้ากันได้</button>`
-              : `<button onclick="skipCompatibilityAnimation()" class="btn-vintage-secondary px-3 py-1 rounded-md text-[11px] font-fahkwang">ข้ามไปดูผลลัพธ์ทันที →</button>`
+              ? `<button onclick="openCompatibilitySummaryModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-xs font-fahkwang">${isEn ? '✦ View Result' : '✦ ดูผลความเข้ากันได้'}</button>`
+              : `<button onclick="skipCompatibilityAnimation()" class="btn-vintage-secondary px-3 py-1 rounded-md text-[11px] font-fahkwang">${isEn ? 'Skip to Result →' : 'ข้ามไปดูผล →'}</button>`
           }
         </div>
       </div>
@@ -816,11 +885,11 @@ function renderCompatibilityCanvas(scanIndex = -1, matchedPairIndices = new Set(
         <div id="compat-curtain-overlay"
              class="${compatFinished ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'} absolute inset-0 z-40 bg-[#FBF1D4]/30 backdrop-blur-[0.5px] rounded-xl transition-opacity duration-500 flex flex-col items-center justify-center gap-2.5">
           <div class="px-4 py-1.5 rounded-full bg-[#FCF4DC]/95 border border-[#8A5414]/60 shadow-md text-xs sm:text-sm font-fahkwang text-[#4F2031] animate-pulse">
-            ✦ กำลังคัดไพ่ออก...
+            ${isEn ? '✦ Pairing matching cards...' : '✦ กำลังคัดไพ่ออก...'}
           </div>
           <button onclick="skipCompatibilityAnimation()"
                   class="btn-vintage-secondary px-3.5 py-1.5 rounded-md text-xs font-fahkwang shadow-md">
-            ข้ามไปดูผลลัพธ์ทันที →
+            ${isEn ? 'Skip to Result →' : 'ข้ามไปดูผล →'}
           </button>
         </div>
         <div id="compat-cards-row" class="flex flex-wrap items-center justify-center gap-y-4 pl-3.5 sm:pl-4">
@@ -954,26 +1023,36 @@ function enterCompatibilityReadingStage() {
   compatTimer = setTimeout(runCompatibilityStep, 550);
 }
 
-function openCompatibilitySummaryModal() {
+async function openCompatibilitySummaryModal() {
   if (!activeSpread) return;
+  const isEn = getCurrentLang() === 'en';
   const body = document.getElementById('modal-reading-body');
   const remain = compatCards.length;
   const tier = getCompatibilityTier(remain);
   const leftCard = compatCards.length > 0 ? compatCards[0] : null;
   const rightCard = compatCards.length > 1 ? compatCards[compatCards.length - 1] : leftCard;
-  const leftCauseText = (leftCard && COMPATIBILITY_READINGS[leftCard.id]?.cause) || (leftCard ? leftCard.meaning : '');
-  const rightAdviceText = (rightCard && COMPATIBILITY_READINGS[rightCard.id]?.advice) || (rightCard ? rightCard.warning : '');
+
+  let compatDb = COMPATIBILITY_READINGS;
+  if (isEn) {
+    try {
+      const mod = await import('../data/en/compatibility-readings.js');
+      if (mod?.COMPATIBILITY_READINGS_EN) compatDb = mod.COMPATIBILITY_READINGS_EN;
+    } catch (_) {}
+  }
+
+  const leftCauseText = (leftCard && compatDb[leftCard.id]?.cause) || (leftCard ? leftCard.meaning : '');
+  const rightAdviceText = (rightCard && compatDb[rightCard.id]?.advice) || (rightCard ? rightCard.warning : '');
 
   const keyCardsHtml = leftCard
     ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
-          <p class="font-fahkwang text-[11px] text-[#4F2031]">✦ สาเหตุหรืออุปสรรค</p>
+          <p class="font-fahkwang text-[11px] text-[#4F2031]">${isEn ? '✦ Cause or Friction' : '✦ สาเหตุหรืออุปสรรค'}</p>
           <div class="flex items-center gap-3">
             <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(leftCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${leftCard.name}</p>
-              <p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>
+              ${!isEn ? `<p class="font-charm text-sm text-[#4F2031]">${leftCard.thaiName}</p>` : ''}
               <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${leftCauseText}</p>
             </div>
           </div>
@@ -982,12 +1061,12 @@ function openCompatibilitySummaryModal() {
           rightCard
             ? `
         <div class="bg-[#FCF4DC]/85 border border-[#8A5414]/45 rounded-lg p-3 space-y-2">
-          <p class="font-fahkwang text-[11px] text-[#8A5414]">✦ คำแนะนำการปรับตัว</p>
+          <p class="font-fahkwang text-[11px] text-[#8A5414]">${isEn ? '✦ Gentle Advice' : '✦ คำแนะนำการปรับตัว'}</p>
           <div class="flex items-center gap-3">
             <div class="w-16 sm:w-[76px] shrink-0">${buildMinimalCardFrontHTML(rightCard)}</div>
             <div class="space-y-1 text-left">
               <p class="font-cinzel text-xs font-bold text-[#2A160E]">${rightCard.name}</p>
-              <p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>
+              ${!isEn ? `<p class="font-charm text-sm text-[#4F2031]">${rightCard.thaiName}</p>` : ''}
               <p class="font-pridi text-xs text-[#2A160E] leading-relaxed">${rightAdviceText}</p>
             </div>
           </div>
@@ -996,11 +1075,11 @@ function openCompatibilitySummaryModal() {
         }
       </div>
     `
-    : `<div class="bg-[#F8E7B4]/85 border border-[#B47B1E]/70 rounded-lg p-3.5 text-center font-pridi text-sm text-[#4A2508]">ตัดคู่ไพ่ครบทุกใบ ไม่มีอุปสรรคหลงเหลือ ความสัมพันธ์ราบรื่นและสอดคล้องกันอย่างยอดเยี่ยม</div>`;
+    : `<div class="bg-[#F8E7B4]/85 border border-[#B47B1E]/70 rounded-lg p-3.5 text-center font-pridi text-sm text-[#4A2508]">${isEn ? 'All 52 cards paired with no obstacles remaining—your harmony flows wonderfully.' : 'ตัดคู่ไพ่ครบทุกใบ ไม่มีอุปสรรคหลงเหลือ ความสัมพันธ์ราบรื่นและสอดคล้องกันอย่างยอดเยี่ยม'}</div>`;
 
   const starMeterHtml = Array.from({ length: 5 }, (_, idx) =>
     idx < (tier.stars || 3)
-      ? '<span class="text-[#B47B1E]">✦</span>'
+      ? '<span class="text-[#B47B1E] drop-shadow-[0_1px_2px_rgba(180,123,30,0.35)]">✦</span>'
       : '<span class="text-[#8A5414]/25">✦</span>'
   ).join('');
 
@@ -1009,16 +1088,16 @@ function openCompatibilitySummaryModal() {
       <div class="text-center space-y-1 border-b border-[#8A5414]/45 pb-3">
         <span class="font-cinzel text-xs tracking-[0.18em] uppercase text-[#4F2031]">${activeSpread.engTitle}</span>
         <h3 class="font-charm text-2xl sm:text-3xl text-[#2A160E] leading-snug">
-          <span class="block">บทสรุปคำพยากรณ์</span>
-          <span class="block text-xl sm:text-2xl text-[#4F2031]">${activeSpread.name}</span>
+          <span class="block">${escapeHtml(t('summaryHeader'))}</span>
+          <span class="block text-xl sm:text-2xl text-[#4F2031]">${escapeHtml(getSpreadName(activeSpread))}</span>
         </h3>
       </div>
 
-      <div class="rounded-xl border p-4 text-center space-y-1.5 shadow-inner ${tier.badgeCls}">
-        <div class="flex items-center justify-center gap-1.5 text-sm tracking-widest" aria-label="ระดับความเข้ากัน ${tier.stars} จาก 5">${starMeterHtml}</div>
-        <p class="font-charm text-2xl font-bold">${tier.title}</p>
-        <p class="font-fahkwang text-[11px] opacity-80">เหลือไพ่ทั้งหมด <strong>${remain} ใบ</strong> (ช่วง ${tier.range})</p>
-        <p class="font-pridi text-xs sm:text-sm leading-relaxed pt-0.5">${tier.desc}</p>
+      <div class="rounded-xl border border-[#8A5414]/45 bg-[#FCF4DC]/85 px-4 py-4 sm:py-5 text-center space-y-2 text-[#2A160E]">
+        <div class="flex items-center justify-center gap-2 text-2xl sm:text-3xl leading-none" aria-label="${isEn ? `Compatibility ${tier.stars} out of 5` : `ระดับความเข้ากัน ${tier.stars} จาก 5`}">${starMeterHtml}</div>
+        <p class="font-charm text-lg sm:text-xl font-bold text-[#4F2031] leading-snug">${tier.title}</p>
+        <p class="font-fahkwang text-[11px] text-[#8A5414]">${isEn ? `Remaining cards: <strong>${remain}</strong> (${tier.range})` : `เหลือไพ่ทั้งหมด <strong>${remain} ใบ</strong> (ช่วง ${tier.range})`}</p>
+        <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed pt-0.5 max-w-md mx-auto">${tier.desc}</p>
       </div>
 
       ${keyCardsHtml}
@@ -1030,12 +1109,12 @@ function openCompatibilitySummaryModal() {
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="flex flex-col items-end gap-2">
-        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-          กลับสู่แท่นพยากรณ์
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
+          ${escapeHtml(t('btnOtherSpreads'))}
         </button>
-        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">
-          การทำนายอื่น ๆ
+        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+          ${isEn ? 'Back to Board' : 'กลับไปแท่นไพ่'}
         </button>
       </div>
     `;
@@ -1115,8 +1194,10 @@ function initSpreadNavigation() {
   }).join('');
 
   const grid = document.getElementById('spread-options-grid');
-  grid.innerHTML = SPREADS_DATA.map(
-    (spread) => `
+  grid.innerHTML = SPREADS_DATA.map((spread) => {
+    const tags = getSpreadTopicTags(spread);
+    const ritual = getSpreadRitualNotice(spread);
+    return `
     <button onclick="selectSpread('${spread.spread_id}')"
             class="vintage-spread-card rounded-lg p-3.5 sm:p-5 text-left flex flex-col justify-between focus:outline-none group">
       <div class="space-y-1.5 sm:space-y-2">
@@ -1126,8 +1207,8 @@ function initSpreadNavigation() {
         </div>
         <h2 class="font-charm text-xl sm:text-2xl text-[#2A160E] group-hover:text-[#4F2031] transition-colors">${getSpreadName(spread)}</h2>
         ${
-          !isEn && Array.isArray(spread.topicTags) && spread.topicTags.length > 0
-            ? `<div class="flex flex-wrap gap-1 pt-0.5">${spread.topicTags
+          tags.length > 0
+            ? `<div class="flex flex-wrap gap-1 pt-0.5">${tags
                 .map(
                   (tag) =>
                     `<span class="px-1.5 py-0.5 rounded text-[10px] font-fahkwang bg-[#F4DC9C]/65 text-[#4F2031] border border-[#8A5414]/35">${tag}</span>`
@@ -1137,11 +1218,11 @@ function initSpreadNavigation() {
         }
         <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">${getSpreadPurpose(spread)}</p>
         ${
-          !isEn && spread.ritualNoticeBody
+          ritual.body
             ? `
         <div class="mt-1.5 rounded-md bg-[#F4DC9C]/45 border border-[#8A5414]/35 px-2.5 py-1.5 text-[11px] sm:text-xs font-pridi text-[#4F2031] leading-relaxed">
-          <span class="font-fahkwang text-[10px] sm:text-[11px] text-[#8A5414] block mb-0.5">☽ ${spread.ritualNoticeTitle || 'ตั้งจิตก่อนเริ่มทำนาย'}</span>
-          <span>${spread.ritualNoticeBody}</span>
+          <span class="font-fahkwang text-[10px] sm:text-[11px] text-[#8A5414] block mb-0.5">☽ ${ritual.title || (isEn ? 'Set Your Intention' : 'ตั้งจิตก่อนเริ่มทำนาย')}</span>
+          <span>${ritual.body}</span>
         </div>`
             : ''
         }
@@ -1151,13 +1232,14 @@ function initSpreadNavigation() {
         <span class="text-[#4F2031] group-hover:translate-x-1 transition-transform">✦ →</span>
       </div>
     </button>
-  `
-  ).join('');
+  `;
+  }).join('');
 }
 
 function resetToHome() {
   clearCompatibilityTimer();
   closeReadingModal();
+  closeRitualFocusModal();
   clearPendingDrawNotice();
   activeSpread = null;
   placedSlots = [];
@@ -1211,10 +1293,12 @@ function openRitualFocusModal(spread) {
   const tipEl = document.getElementById('ritual-focus-tip');
   if (!modal || !titleEl || !bodyEl || !tipEl) return;
 
-  titleEl.textContent = spread.ritualNoticeTitle || 'ตั้งจิตก่อนเริ่มทำนาย';
-  bodyEl.innerHTML = spread.ritualNoticeBody || '';
-  if (spread.ritualNoticeTip) {
-    tipEl.textContent = spread.ritualNoticeTip;
+  const isEn = getCurrentLang() === 'en';
+  const ritual = getSpreadRitualNotice(spread);
+  titleEl.textContent = ritual.title || (isEn ? 'Set Your Intention' : 'ตั้งจิตก่อนเริ่มทำนาย');
+  bodyEl.innerHTML = ritual.body || '';
+  if (ritual.tip) {
+    tipEl.textContent = ritual.tip;
     tipEl.classList.remove('hidden');
   } else {
     tipEl.classList.add('hidden');
@@ -1230,6 +1314,17 @@ function closeRitualFocusModal() {
   modal.classList.remove('flex');
 }
 
+function dismissRitualFocusModal() {
+  closeRitualFocusModal();
+  resetToHome();
+}
+
+function handleRitualFocusBackdropClick(event) {
+  if (event.target.id === 'ritual-focus-modal') {
+    dismissRitualFocusModal();
+  }
+}
+
 function handleDeckStackInteraction() {
   if (isAnimatingRitual || ritualPhase !== 'shuffle') return;
 
@@ -1242,7 +1337,10 @@ function handleDeckStackInteraction() {
   void zone.offsetWidth;
   zone.classList.add('is-shuffling');
 
-  document.getElementById('shuffle-counter-badge').textContent = `สับไพ่ไปแล้ว ${shuffleCount} ครั้ง`;
+  const isEn = getCurrentLang() === 'en';
+  document.getElementById('shuffle-counter-badge').textContent = isEn
+    ? `Shuffled ${shuffleCount} ${shuffleCount === 1 ? 'time' : 'times'}`
+    : `สับไพ่ไปแล้ว ${shuffleCount} ครั้ง`;
   const proceedBtn = document.getElementById('btn-proceed-next');
   if (proceedBtn && shuffleCount >= 1) {
     proceedBtn.disabled = false;
@@ -1345,7 +1443,7 @@ function renderFannedDeckArc(animateDeal = false) {
   const container = document.getElementById('fan-arc-container');
   const hintEl = document.getElementById('fan-hover-hint');
   if (hintEl) {
-    hintEl.textContent = 'ใช้ความรู้สึกแวบแรก แตะเลือกใบที่สะดุดตาที่สุดจากสำรับ 52 ใบ';
+    hintEl.textContent = t('drawHintDefault');
   }
 
   const containerWidth = container.clientWidth || container.parentElement.clientWidth || window.innerWidth;
@@ -1375,6 +1473,7 @@ function renderFannedDeckArc(animateDeal = false) {
         const marginStyle = i === 0 ? 'margin-left: 0px;' : `margin-left: ${overlapPx}px;`;
         const dealDelayStyle = animateDeal ? `--deal-delay: ${idx * 28}ms;` : '';
         const dealCls = animateDeal ? 'fan-deal-in' : '';
+        const cardTitleTip = getCurrentLang() === 'en' ? 'Choose this card' : 'เลือกไพ่ใบนี้';
 
         rowButtons.push(`
           <button id="deck-card-${idx}"
@@ -1383,7 +1482,7 @@ function renderFannedDeckArc(animateDeal = false) {
                   onmouseenter="handleDeckCardHover()"
                   style="z-index: ${idx + 1}; ${marginStyle} ${dealDelayStyle}"
                   class="draw-row-card ${dealCls} relative shrink-0 ${cardSizeCls} clow-aspect focus:outline-none"
-                  title="เลือกไพ่ใบนี้">
+                  title="${cardTitleTip}">
             ${buildMinimalCardBackSVG()}
           </button>
         `);
@@ -1402,7 +1501,7 @@ function handleDeckCardHover() {
   if (armedDeckIdx !== null) return;
   const hintEl = document.getElementById('fan-hover-hint');
   if (hintEl) {
-    hintEl.textContent = 'แตะไพ่ครั้งแรกเพื่อยกขึ้น แล้วแตะซ้ำอีกครั้งเพื่อยืนยันเลือก';
+    hintEl.textContent = t('drawHintHover');
   }
 }
 
@@ -1427,7 +1526,7 @@ function pickCardFromDeck(deckIdx) {
       cardBtn.classList.add('is-armed');
     }
     if (hintEl) {
-      hintEl.textContent = '✦ แตะไพ่ใบเดิมอีกครั้งเพื่อยืนยันการเลือก';
+      hintEl.textContent = t('drawHintConfirm');
     }
     if (confirmBtn) confirmBtn.classList.remove('hidden');
     playSoftPaperRustle();
@@ -1443,7 +1542,7 @@ function pickCardFromDeck(deckIdx) {
     cardBtn.disabled = true;
   }
   if (hintEl) {
-    hintEl.textContent = 'แตะไพ่ครั้งแรกเพื่อยกขึ้น แล้วแตะซ้ำอีกครั้งเพื่อยืนยันเลือก';
+    hintEl.textContent = t('drawHintHover');
   }
 
   const chosenCard = shuffledDeck[deckIdx];
@@ -1553,6 +1652,7 @@ function drawAllRemainingCards() {
 
 function updateTableProgress() {
   if (!activeSpread) return;
+  const isEn = getCurrentLang() === 'en';
   const count = placedSlots.length;
   const total = activeSpread.card_count;
   const boardHint = document.getElementById('board-stage-hint');
@@ -1561,38 +1661,53 @@ function updateTableProgress() {
   const revealAllFooter = document.getElementById('board-reveal-all-footer');
 
   if (count < total) {
-    setTableProgressText(`เลือกไพ่ ${count} / ${total} ใบ`);
-    boardHint.textContent = `กำลังเลือกไพ่ใบที่ ${count + 1} จาก ${total} ใบ`;
-    guideText.innerHTML =
-      `ใช้ความรู้สึกแวบแรกเลือกไพ่ 1 ใบที่สะดุดตาที่สุด — <em>เลือกแล้วไม่สามารถเปลี่ยนใบได้</em>`;
-    document.getElementById('deck-instruction-title').textContent = `เลือกไพ่ใบที่ ${count + 1} จาก ${total} ใบ`;
-    document.getElementById('deck-instruction-sub').textContent = 'ใช้ความรู้สึกแวบแรก แตะเลือกไพ่คว่ำใบที่ถูกชะตาที่สุดโดยไม่ต้องลังเล';
+    setTableProgressText(isEn ? `Chosen ${count} / ${total}` : `เลือกไพ่ ${count} / ${total} ใบ`);
+    boardHint.textContent = isEn
+      ? `Choosing card ${count + 1} of ${total}`
+      : `กำลังเลือกไพ่ใบที่ ${count + 1} จาก ${total} ใบ`;
+    guideText.innerHTML = isEn
+      ? `Trust your first feeling and choose 1 card that draws your eye — <em>cards cannot be swapped once chosen</em>`
+      : `ใช้ความรู้สึกแวบแรกเลือกไพ่ 1 ใบที่สะดุดตาที่สุด — <em>เลือกแล้วไม่สามารถเปลี่ยนใบได้</em>`;
+    document.getElementById('deck-instruction-title').textContent = isEn
+      ? `Choose Card ${count + 1} of ${total}`
+      : `เลือกไพ่ใบที่ ${count + 1} จาก ${total} ใบ`;
+    document.getElementById('deck-instruction-sub').textContent = isEn
+      ? 'Trust your first feeling and tap the face-down card that catches your eye.'
+      : 'ใช้ความรู้สึกแวบแรก แตะเลือกไพ่คว่ำใบที่ถูกชะตาที่สุดโดยไม่ต้องลังเล';
     if (summaryCta) summaryCta.classList.add('hidden');
     if (revealAllFooter) revealAllFooter.classList.add('hidden');
   } else {
-    setTableProgressText(`วางไพ่ครบ ${total} / ${total} ใบแล้ว`);
-    document.getElementById('deck-instruction-title').textContent = 'อัญเชิญไพ่ครบตามผังแล้ว';
-    document.getElementById('deck-instruction-sub').textContent = 'แตะเปิดไพ่บนแท่นตามลำดับหมายเลขในคู่มือ';
+    setTableProgressText(isEn ? `All ${total} / ${total} placed` : `วางไพ่ครบ ${total} / ${total} ใบแล้ว`);
+    document.getElementById('deck-instruction-title').textContent = isEn
+      ? 'All Cards Are in Place'
+      : 'อัญเชิญไพ่ครบตามผังแล้ว';
+    document.getElementById('deck-instruction-sub').textContent = isEn
+      ? 'Tap each card on the board in numbered order to reveal its message.'
+      : 'แตะเปิดไพ่บนแท่นตามลำดับหมายเลขในคู่มือ';
 
     const unrevealed = placedSlots.filter((s) => !s.isRevealed);
     if (unrevealed.length > 0) {
       const nextPos = unrevealed[0].posIndex;
       const posMeta = activeSpread.positions.find((p) => p.index === nextPos);
-      boardHint.textContent = `ลำดับการเปิดตามคู่มือ: ${posMeta ? `${posMeta.index}. ${posMeta.title}` : ''}`;
+      const posTitle = posMeta ? getPosTitle(activeSpread.spread_id, posMeta) : '';
+      boardHint.textContent = isEn
+        ? `Next to reveal: ${posMeta ? `${posMeta.index}. ${posTitle}` : ''}`
+        : `ลำดับการเปิดตามคู่มือ: ${posMeta ? `${posMeta.index}. ${posTitle}` : ''}`;
       guideText.innerHTML = '';
       guideText.classList.add('hidden');
       if (guideText.parentElement) guideText.parentElement.classList.add('hidden');
       const fullBtn = document.getElementById('btn-full-reading');
-  if (fullBtn) fullBtn.classList.add('hidden');
+      if (fullBtn) fullBtn.classList.add('hidden');
       if (summaryCta) summaryCta.classList.add('hidden');
       if (revealAllFooter) {
         if (activeSpread.card_count > 1) revealAllFooter.classList.remove('hidden');
         else revealAllFooter.classList.add('hidden');
       }
     } else {
-      boardHint.textContent = 'เปิดเผยไพ่ครบทุกตำแหน่งแล้ว';
-      guideText.innerHTML =
-        `เปิดเผยไพ่ครบทุกใบแล้ว แตะที่ไพ่ใบใดก็ได้เพื่อทบทวน หรือกด <strong>"อ่านบทสรุปคำทำนาย"</strong> ด้านล่าง`;
+      boardHint.textContent = t('boardHintDone');
+      guideText.innerHTML = isEn
+        ? `All cards have been revealed. Tap any card to read it again, or tap <strong>"View Summary"</strong> below.`
+        : `เปิดเผยไพ่ครบทุกใบแล้ว แตะที่ไพ่ใบใดก็ได้เพื่อทบทวน หรือกด <strong>"ดูบทสรุป"</strong> ด้านล่าง`;
       const fullBtn = document.getElementById('btn-full-reading');
       if (fullBtn) fullBtn.classList.remove('hidden');
       if (revealAllFooter) revealAllFooter.classList.add('hidden');
@@ -1740,7 +1855,8 @@ function updateQuestNavArrow() {
   if (arrowIcon) {
     arrowIcon.style.transform = `rotate(${angleDeg}deg)`;
   }
-  arrowText.textContent = `แตะเปิดไพ่ลำดับที่ ${nextPos}`;
+  arrowText.textContent =
+    getCurrentLang() === 'en' ? `Tap to reveal card ${nextPos}` : `แตะเปิดไพ่ลำดับที่ ${nextPos}`;
   arrowBtn.classList.remove('hidden');
 }
 
@@ -1772,13 +1888,15 @@ function buildSlotHTML(pos) {
   const headerMinH = isCompactBoard ? 'min-h-[28px] sm:min-h-[34px] px-1 py-0.5 mb-1' : 'min-h-[36px] sm:min-h-[42px] px-1.5 sm:px-2 py-0.5 mb-1.5';
   const titleTextCls = isCompactBoard ? 'text-[7.5px] sm:text-[9.5px]' : 'text-[8.5px] sm:text-[11px]';
 
+  const isEn = getCurrentLang() === 'en';
+  const posTitleText = getPosTitle(activeSpread.spread_id, pos);
   const slotHeader = `
     <div class="inline-flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 ${headerMinH} rounded-lg bg-[#FCF4DC]/40 border border-[#8A5414]/20 opacity-80 w-full text-center">
       <span class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#8A5414]/20 text-[#523020]/85 font-cinzel text-[8px] sm:text-[9px] font-semibold flex items-center justify-center shrink-0 leading-none">
         ${pos.index}
       </span>
       <span class="font-fahkwang ${titleTextCls} text-[#523020]/75 leading-tight break-words">
-        ${pos.title}
+        ${posTitleText}
       </span>
     </div>
   `;
@@ -1795,7 +1913,7 @@ function buildSlotHTML(pos) {
         } flex flex-col items-center justify-center p-1 sm:p-2 text-center transition-all">
           <span class="font-cinzel text-xs sm:text-sm font-bold text-[#4F2031]/80">${pos.index}</span>
           <span class="font-pridi text-[8px] sm:text-[9.5px] text-[#523020]/85 mt-0.5 leading-tight">
-            ${isCurrentTarget ? 'รอวางไพ่' : 'ว่าง'}
+            ${isCurrentTarget ? t('slotWaiting') : isEn ? 'Empty' : 'ว่าง'}
           </span>
         </div>
         <span class="mt-1 min-h-[18px] sm:min-h-[22px]"></span>
@@ -1811,12 +1929,36 @@ function buildSlotHTML(pos) {
         ? 'active-card-spotlight'
         : '';
 
+  const slotBtnTitle = !isAllPlaced
+    ? isEn
+      ? 'Please draw all cards first before revealing'
+      : 'กรุณาเลือกไพ่ให้ครบทุกใบก่อนเปิดคำทำนาย'
+    : placed.isRevealed
+      ? isEn
+        ? `Read ${placed.card.name}`
+        : `อ่านคำทำนาย ${placed.card.name}`
+      : isEn
+        ? `Tap to reveal card ${pos.index}`
+        : `แตะเพื่อพลิกเปิดไพ่ตามลำดับที่ ${pos.index}`;
+
+  const slotFooterLabel = placed.isRevealed
+    ? isEn
+      ? placed.card.name
+      : placed.card.thaiName
+    : !isAllPlaced
+      ? t('slotWaitAll')
+      : isNextToFlip
+        ? isEn
+          ? `✦ Tap to Reveal #${pos.index}`
+          : `✦ แตะเปิดลำดับ ${pos.index}`
+        : t('slotFaceDown');
+
   return `
     <div class="flex flex-col items-center justify-between w-full ${slotHeightCls} min-w-0 ${boxPadCls} rounded-xl bg-[#FBF1D4]/30 border border-[#8A5414]/25 card-enter">
       ${slotHeader}
       <button onclick="handlePlacedCardClick(${pos.index})"
               class="perspective-1200 ${cardSizeCls} clow-aspect focus:outline-none ${isAllPlaced ? 'cursor-pointer' : 'cursor-not-allowed'} group ${highlightCls}"
-              title="${!isAllPlaced ? 'กรุณาเลือกไพ่ให้ครบทุกใบก่อนเปิดคำทำนาย' : placed.isRevealed ? `อ่านคำทำนาย ${placed.card.name}` : `แตะเพื่อพลิกเปิดไพ่ตามลำดับที่ ${pos.index}`}">
+              title="${slotBtnTitle}">
         <div class="card-inner ${placed.isRevealed ? 'is-flipped' : ''}">
           <div class="card-face">
             ${buildMinimalCardBackSVG()}
@@ -1829,7 +1971,7 @@ function buildSlotHTML(pos) {
       <span class="mt-1.5 min-h-[24px] sm:min-h-[28px] flex items-center justify-center font-fahkwang text-[8.5px] sm:text-[10px] text-center leading-tight ${
         placed.isRevealed ? 'text-[#4F2031]/70' : 'text-[#523020]/60'
       }">
-        ${placed.isRevealed ? placed.card.thaiName : !isAllPlaced ? 'รอเลือกให้ครบ' : isNextToFlip ? '✦ แตะเปิดลำดับ ' + pos.index : 'คว่ำหน้า'}
+        ${slotFooterLabel}
       </span>
     </div>
   `;
@@ -1942,13 +2084,16 @@ function renderSpreadBoard() {
 
 function handlePlacedCardClick(posIndex) {
   if (!activeSpread) return;
+  const isEn = getCurrentLang() === 'en';
   if (placedSlots.length < activeSpread.card_count) {
     const remain = activeSpread.card_count - placedSlots.length;
     const guideText = document.getElementById('board-ritual-guide-text');
     const boardHint = document.getElementById('board-stage-hint');
-    const msg = `✦ เลือกไพ่ให้ครบทั้ง ${activeSpread.card_count} ใบก่อน แล้วค่อยเปิดรับสารจากหน้าไพ่ (ยังขาดอีก ${remain} ใบ)`;
+    const msg = isEn
+      ? `✦ Please choose all ${activeSpread.card_count} cards first before revealing (${remain} left)`
+      : `✦ เลือกไพ่ให้ครบทั้ง ${activeSpread.card_count} ใบก่อน แล้วค่อยเปิดรับสารจากหน้าไพ่ (ยังขาดอีก ${remain} ใบ)`;
     if (guideText) guideText.innerHTML = `<strong class="text-[#4F2031]">${msg}</strong>`;
-    if (boardHint) boardHint.textContent = `เลือกไพ่ให้ครบก่อนเปิด (ขาดอีก ${remain} ใบ)`;
+    if (boardHint) boardHint.textContent = isEn ? `Draw all cards first (${remain} left)` : `เลือกไพ่ให้ครบก่อนเปิด (ขาดอีก ${remain} ใบ)`;
     return;
   }
   const placed = placedSlots.find((s) => s.posIndex === posIndex);
@@ -1964,7 +2109,9 @@ function handlePlacedCardClick(posIndex) {
     if (!nextUnrevealed || nextUnrevealed.posIndex !== posIndex) {
       const boardHint = document.getElementById('board-stage-hint');
       if (boardHint && nextUnrevealed) {
-        boardHint.textContent = `ลองเปิดไพ่ทีละใบตามลำดับ (เริ่มที่ใบที่ ${nextUnrevealed.posIndex} ก่อน)`;
+        boardHint.textContent = isEn
+          ? `Please reveal cards in order (start with card #${nextUnrevealed.posIndex})`
+          : `ลองเปิดไพ่ทีละใบตามลำดับ (เริ่มที่ใบที่ ${nextUnrevealed.posIndex} ก่อน)`;
       }
       return;
     }
@@ -2046,11 +2193,12 @@ async function triggerAiInterpretation() {
   const outputEl = document.getElementById('ai-oracle-output');
   if (!outputEl) return;
 
+  const isEn = getCurrentLang() === 'en';
   outputEl.classList.remove('hidden');
   outputEl.innerHTML = `
     <div class="ai-loading-pulse py-4 text-center space-y-1.5">
-      <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">☽ กำลังร้อยเรียงบทสรุปคำทำนาย...</p>
-      <p class="font-pridi text-[11px] text-[#523020]">โปรดรอสักครู่</p>
+      <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">${escapeHtml(t('loadingSummaryTitle'))}</p>
+      <p class="font-pridi text-[11px] text-[#523020]">${escapeHtml(t('loadingSummarySub'))}</p>
     </div>
   `;
 
@@ -2061,9 +2209,10 @@ async function triggerAiInterpretation() {
   });
 
   if (result.mode === 'quota' || result.mode === 'fallback') {
+    const isEnNotice = getCurrentLang() === 'en';
     outputEl.innerHTML = `
       <div class="bg-[#FCF4DC] border border-[#8F5B6E]/60 rounded-lg p-3.5 space-y-1">
-        <p class="font-fahkwang text-xs text-[#4F2031]">☽ คำแนะนำจากคัมภีร์</p>
+        <p class="font-fahkwang text-xs text-[#4F2031]">${isEnNotice ? '☽ Note from the Grimoire' : '☽ คำแนะนำจากคัมภีร์'}</p>
         <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(result.message)}</p>
       </div>
     `;
@@ -2079,29 +2228,60 @@ async function triggerAiInterpretation() {
   const cleanAdviceText = rawAdviceText.replace(/,/g, '');
 
   const isSingleDaily = activeSpread && activeSpread.spread_id === 'daily_single';
+  const hasUserQuestion = Boolean(userSecretQuestion && userSecretQuestion.trim());
+  const cleanOverviewText = String(result.overview || '').replace(/,/g, '').trim();
+  const firstConnectionInsight =
+    Array.isArray(result.connections) && result.connections[0]
+      ? String(result.connections[0].insight || '').replace(/,/g, '').trim()
+      : '';
+  const shouldShowQuestionOverview =
+    hasUserQuestion &&
+    Boolean(cleanOverviewText) &&
+    Array.isArray(result.connections) &&
+    result.connections.length > 0 &&
+    (!isSingleDaily || cleanOverviewText !== firstConnectionInsight);
+
+  const noticeHtml = result.notice
+    ? `<div class="bg-[#FFF4D6]/90 border border-[#B47B1E]/55 rounded-lg px-3.5 py-2 text-[11px] sm:text-xs font-pridi text-[#6D3B16] leading-relaxed">✦ ${escapeHtml(String(result.notice).replace(/,/g, '').trim())}</div>`
+    : '';
+
+  const questionOverviewHtml = shouldShowQuestionOverview
+    ? `
+      <div class="bg-[#F8E7B9]/85 border border-[#8A5414]/60 rounded-lg p-3.5 sm:p-4 space-y-1.5 text-left">
+        <div class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">${escapeHtml(t('summaryOverviewHeader'))}</div>
+        <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanOverviewText)}</p>
+      </div>
+    `
+    : '';
+
   const overviewBlocks =
     Array.isArray(result.connections) && result.connections.length > 0
       ? result.connections
           .map((item, idx) => {
             const stepNum = item.positionIndex || idx + 1;
-            const titleOnly = item.positionTitle || '';
+            const posMeta = activeSpread.positions.find((p) => Number(p.index) === Number(stepNum));
+            const titleOnly = (posMeta ? getPosTitle(activeSpread.spread_id, posMeta) : item.positionTitle) || '';
             const headerLabel = isSingleDaily
-              ? `✦ ${titleOnly || 'สารหลักประจำวัน'}`
-              : `✦ ใบที่ ${stepNum}${titleOnly ? ` · ${titleOnly}` : ''}`;
-            const insightText = String(item.insight || '').replace(/,/g, '').trim();
+              ? `✦ ${titleOnly || (isEn ? 'Message for Today' : 'สารหลักประจำวัน')}`
+              : isEn
+                ? `✦ Card ${stepNum}${titleOnly ? ` · ${titleOnly}` : ''}`
+                : `✦ ใบที่ ${stepNum}${titleOnly ? ` · ${titleOnly}` : ''}`;
+            const insightText = isEn
+              ? String(item.insight || '').trim()
+              : String(item.insight || '').replace(/,/g, '').trim();
             const matchedSlot = placedSlots.find((s) => Number(s.posIndex) === Number(stepNum));
             const cardThumbHtml =
               matchedSlot && matchedSlot.card && !isSingleDaily
                 ? `<div class="w-16 sm:w-[76px] shrink-0" data-card-front-slot="${matchedSlot.card.id}">${buildMinimalCardFrontHTML(matchedSlot.card)}</div>`
                 : '';
             const cardHeaderHtml = isSingleDaily
-              ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">✦ ${escapeHtml(titleOnly || 'สารหลักประจำวัน')}</div>`
+              ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">✦ ${escapeHtml(titleOnly || (isEn ? 'Message for Today' : 'สารหลักประจำวัน'))}</div>`
               : matchedSlot && matchedSlot.card
                 ? `<div class="space-y-0.5 leading-snug">
                      <div class="flex flex-wrap items-baseline gap-x-1.5 text-[11px] sm:text-xs">
-                       <span class="font-fahkwang text-[#8A5414]">✦ ลำดับที่ ${stepNum}</span>
+                       <span class="font-fahkwang text-[#8A5414]">${isEn ? `✦ No. ${stepNum}` : `✦ ลำดับที่ ${stepNum}`}</span>
                        <span class="font-cinzel font-bold text-[#2A160E]">${escapeHtml(matchedSlot.card.name)}</span>
-                       <span class="font-charm text-xs sm:text-sm text-[#4F2031]">(${escapeHtml(matchedSlot.card.thaiName)})</span>
+                       ${!isEn ? `<span class="font-charm text-xs sm:text-sm text-[#4F2031]">(${escapeHtml(matchedSlot.card.thaiName)})</span>` : ''}
                      </div>
                      ${titleOnly ? `<div class="font-fahkwang text-[11px] sm:text-xs text-[#4F2031]">${escapeHtml(titleOnly)}</div>` : ''}
                    </div>`
@@ -2119,10 +2299,12 @@ async function triggerAiInterpretation() {
             `;
           })
           .join('')
-      : `<div class="bg-[#FCF4DC]/80 border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5"><p class="font-pridi text-sm text-[#2A160E] leading-relaxed">${escapeHtml(String(result.overview || '').replace(/,/g, ''))}</p></div>`;
+      : `<div class="bg-[#FCF4DC]/80 border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5"><p class="font-pridi text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanOverviewText)}</p></div>`;
 
   outputEl.innerHTML = `
     <div class="space-y-3">
+      ${noticeHtml}
+      ${questionOverviewHtml}
       <div class="space-y-2.5">
         ${overviewBlocks}
       </div>
@@ -2131,8 +2313,8 @@ async function triggerAiInterpretation() {
         cleanAdviceText
           ? `
         <div class="bg-[#8F5B6E]/12 border-l-4 border-[#4F2031] rounded-r-md px-3.5 py-2.5 space-y-1">
-          <h5 class="font-fahkwang text-xs text-[#4F2031]">☽ สารนำทางจากไพ่</h5>
-          <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanAdviceText)}</p>
+          <h5 class="font-fahkwang text-xs text-[#4F2031]">${escapeHtml(t('summaryWarningHeader'))}</h5>
+          <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(isEn ? rawAdviceText : cleanAdviceText)}</p>
         </div>
       `
           : ''
@@ -2156,7 +2338,10 @@ function openSingleCardModal(posIndex) {
   const posMeta = activeSpread.positions.find((p) => p.index === posIndex);
   if (!placed || !posMeta) return;
 
+  const isEn = getCurrentLang() === 'en';
   const card = placed.card;
+  const posTitle = getPosTitle(activeSpread.spread_id, posMeta);
+  const posMeaning = getPosMeaning(activeSpread.spread_id, posMeta);
   const body = document.getElementById('modal-reading-body');
   body.innerHTML = `
     <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 pt-1">
@@ -2166,25 +2351,30 @@ function openSingleCardModal(posIndex) {
         </div>
         <div class="text-center space-y-0.5">
           <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-          <h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>
+          ${!isEn ? `<h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>` : ''}
         </div>
       </div>
 
       <div class="flex-1 space-y-3.5 text-left w-full">
         <div id="single-card-ai-box" class="ai-oracle-panel rounded-lg p-3.5 sm:p-4 space-y-2 text-left">
           <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
-            <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">✦ ลำดับที่ ${posMeta.index} · ${posMeta.title}</span>
-            <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${posMeta.meaning}</p>
+            <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">${isEn ? `✦ No. ${posMeta.index} · ${posTitle}` : `✦ ลำดับที่ ${posMeta.index} · ${posTitle}`}</span>
+            <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${posMeaning}</p>
           </div>
           <p class="ai-loading-pulse font-pridi text-xs text-[#523020]">
-            ☽ กำลังจัดเตรียมคำทำนายเฉพาะตำแหน่งนี้...
+            ${isEn ? '☽ Preparing your message for this position...' : '☽ กำลังจัดเตรียมคำทำนายเฉพาะตำแหน่งนี้...'}
           </p>
         </div>
 
+        ${
+          !isEn
+            ? `
         <div class="bg-[#8F5B6E]/15 border-l-4 border-[#4F2031] rounded-r-md px-4 py-3">
-          <h4 class="font-fahkwang text-xs text-[#4F2031]">☽ สารนำทางจากไพ่</h4>
+          <h4 class="font-fahkwang text-xs text-[#4F2031]">${escapeHtml(t('singleCardWarningHeader'))}</h4>
           <p class="font-pridi text-xs sm:text-sm text-[#2A160E] mt-1 leading-relaxed">${card.warning}</p>
-        </div>
+        </div>`
+            : ''
+        }
       </div>
     </div>
   `;
@@ -2201,17 +2391,18 @@ function openSingleCardModal(posIndex) {
       const curPos = Number(posIndex);
       const hasPrev = curPos > 1;
       const hasNext = curPos < activeSpread.card_count;
+      const isEnModal = getCurrentLang() === 'en';
       const prevBtnHtml = hasPrev
-        ? `<button onclick="openSingleCardModal(${curPos - 1})" class="btn-vintage-secondary px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">← ไพ่ก่อนหน้า</button>`
-        : `<button type="button" disabled aria-disabled="true" class="bg-[#D6D3CD] text-[#7A756D] border border-[#B8B3AA] cursor-not-allowed opacity-85 px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">← ไพ่ก่อนหน้า</button>`;
+        ? `<button onclick="openSingleCardModal(${curPos - 1})" class="btn-vintage-secondary px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">${escapeHtml(t('btnPrevCard'))}</button>`
+        : `<button type="button" disabled aria-disabled="true" class="bg-[#D6D3CD] text-[#7A756D] border border-[#B8B3AA] cursor-not-allowed opacity-85 px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">${escapeHtml(t('btnPrevCard'))}</button>`;
       const nextBtnHtml = hasNext
-        ? `<button onclick="openNextUnrevealedCard(${curPos + 1})" class="btn-vintage-primary px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">ไพ่ลำดับถัดไป (${curPos + 1}) →</button>`
-        : `<button onclick="openFullReadingModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">✦ ดูบทสรุปคำทำนาย</button>`;
+        ? `<button onclick="openNextUnrevealedCard(${curPos + 1})" class="btn-vintage-primary px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">${isEnModal ? `Next (${curPos + 1}) →` : `ใบถัดไป (${curPos + 1}) →`}</button>`
+        : `<button onclick="openFullReadingModal()" class="btn-vintage-plum px-3.5 py-1.5 rounded-md text-[11px] sm:text-xs font-fahkwang whitespace-nowrap">✦ ${escapeHtml(t('btnViewSummarySmall'))}</button>`;
       const summarySubBtn =
         unrevealed.length > 0
-          ? `<button onclick="revealAllAndOpenSummary()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">ดูบทสรุปคำทำนาย</button>`
+          ? `<button onclick="revealAllAndOpenSummary()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">${escapeHtml(t('btnViewSummarySmall'))}</button>`
           : hasNext
-            ? `<button onclick="openFullReadingModal()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">ดูบทสรุปคำทำนาย</button>`
+            ? `<button onclick="openFullReadingModal()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">${escapeHtml(t('btnViewSummarySmall'))}</button>`
             : '';
 
       footerBar.classList.remove('hidden');
@@ -2258,9 +2449,18 @@ async function loadSingleCardAiInsight(posIndex) {
     ? conn.detailInsight || conn.insight
     : result.overview;
 
+  const isEnPos = getCurrentLang() === 'en';
   const posMeta = activeSpread.positions.find((p) => Number(p.index) === Number(posIndex));
-  const headerTitle = posMeta ? `✦ ลำดับที่ ${posMeta.index} · ${posMeta.title}` : `✦ ลำดับที่ ${posIndex}`;
-  const headerSub = posMeta && posMeta.meaning ? `<p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${escapeHtml(posMeta.meaning)}</p>` : '';
+  const posTitle = posMeta ? getPosTitle(activeSpread.spread_id, posMeta) : '';
+  const posMeaning = posMeta ? getPosMeaning(activeSpread.spread_id, posMeta) : '';
+  const headerTitle = posMeta
+    ? isEnPos
+      ? `✦ No. ${posMeta.index} · ${posTitle}`
+      : `✦ ลำดับที่ ${posMeta.index} · ${posTitle}`
+    : isEnPos
+      ? `✦ No. ${posIndex}`
+      : `✦ ลำดับที่ ${posIndex}`;
+  const headerSub = posMeaning ? `<p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${escapeHtml(posMeaning)}</p>` : '';
 
   box.innerHTML = `
     <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
@@ -2280,6 +2480,7 @@ function openFullReadingModal() {
 
   if (isDaily) {
     const card = sortedSlots[0].card;
+    const isEnDaily = getCurrentLang() === 'en';
     body.innerHTML = `
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pt-1">
@@ -2289,7 +2490,7 @@ function openFullReadingModal() {
             </div>
             <div class="text-center space-y-0.5">
               <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-              <h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>
+              ${!isEnDaily ? `<h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>` : ''}
             </div>
           </div>
 
@@ -2300,13 +2501,14 @@ function openFullReadingModal() {
       </div>
     `;
   } else {
+    const isEnSummary = getCurrentLang() === 'en';
     body.innerHTML = `
       <div class="space-y-4">
         <div class="text-center space-y-1 border-b border-[#8A5414]/45 pb-3">
           <span class="font-cinzel text-xs tracking-[0.18em] uppercase text-[#4F2031]">${activeSpread.engTitle}</span>
           <h3 class="font-charm text-2xl sm:text-3xl text-[#2A160E] leading-snug">
-            <span class="block">บทสรุปคำพยากรณ์</span>
-            <span class="block text-xl sm:text-2xl text-[#4F2031]">${activeSpread.name}</span>
+            <span class="block">${escapeHtml(t('summaryHeader'))}</span>
+            <span class="block text-xl sm:text-2xl text-[#4F2031]">${escapeHtml(getSpreadName(activeSpread))}</span>
           </h3>
         </div>
 
@@ -2315,17 +2517,18 @@ function openFullReadingModal() {
     `;
   }
 
+  const isEnFooter = getCurrentLang() === 'en';
   const fullFooterBar = document.getElementById('reading-modal-footer-bar');
   const fullFooterActions = document.getElementById('reading-modal-footer-actions');
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="flex flex-col items-end gap-2">
-        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-          กลับสู่แท่นพยากรณ์
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
+          ${escapeHtml(t('btnOtherSpreads'))}
         </button>
-        <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-2.5 py-1 rounded text-[11px] font-fahkwang leading-tight transition-colors">
-          การทำนายอื่น ๆ
+        <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+          ${isEnFooter ? 'Back to Board' : 'กลับไปแท่นไพ่'}
         </button>
       </div>
     `;
@@ -2473,29 +2676,35 @@ async function loadHtml2Canvas() {
 
 async function shareOrSaveSummary() {
   if (!activeSpread || !placedSlots.length) return;
+  const isEn = getCurrentLang() === 'en';
   trackEvent('summary_share', { spreadId: activeSpread.spread_id, spreadName: activeSpread.name });
   const btn = document.getElementById('btn-share-summary');
-  if (btn) btn.textContent = '✦ กำลังบันทึกภาพหน้าสรุป...';
+  if (btn) btn.textContent = isEn ? '✦ Saving reading image...' : '✦ กำลังบันทึกภาพหน้าสรุป...';
   const sorted = [...placedSlots].sort((a, b) => a.posIndex - b.posIndex);
   const result = buildLocalGuidebookSynthesis(activeSpread, userSecretQuestion, placedSlots);
 
   const lines = [
-    `THE CLOW — ${activeSpread.name}`,
-    `ไพ่ที่ได้: ${sorted.map((s) => `${s.posIndex}. ${s.card.name} (${s.card.thaiName})`).join(' · ')}`,
+    `THE CLOW — ${getSpreadName(activeSpread)}`,
+    isEn
+      ? `Cards drawn: ${sorted.map((s) => `${s.posIndex}. ${s.card.name}`).join(' · ')}`
+      : `ไพ่ที่ได้: ${sorted.map((s) => `${s.posIndex}. ${s.card.name} (${s.card.thaiName})`).join(' · ')}`,
     ''
   ];
   if (Array.isArray(result.connections)) {
     result.connections.forEach((item, idx) => {
       const stepNum = item.positionIndex || idx + 1;
       const titleText = item.positionTitle ? ` · ${item.positionTitle}` : '';
-      lines.push(`ใบที่ ${stepNum}${titleText}: ${String(item.insight || '').replace(/,/g, '').trim()}`);
+      const insightText = isEn ? String(item.insight || '').trim() : String(item.insight || '').replace(/,/g, '').trim();
+      lines.push(isEn ? `Card ${stepNum}${titleText}: ${insightText}` : `ใบที่ ${stepNum}${titleText}: ${insightText}`);
     });
   }
   const cleanWarn = Array.isArray(result.advice)
-    ? result.advice.map((l) => String(l || '').replace(/,/g, '').trim()).filter(Boolean).join(' ')
-    : String(result.advice || '').replace(/,/g, '').trim();
+    ? result.advice.map((l) => (isEn ? String(l || '').trim() : String(l || '').replace(/,/g, '').trim())).filter(Boolean).join(' ')
+    : isEn
+      ? String(result.advice || '').trim()
+      : String(result.advice || '').replace(/,/g, '').trim();
   if (cleanWarn) {
-    lines.push('', `ไพ่เหล่านี้ต้องการเตือนคุณว่า ${cleanWarn}`);
+    lines.push('', isEn ? `Guiding message: ${cleanWarn}` : `ไพ่เหล่านี้ต้องการเตือนคุณว่า ${cleanWarn}`);
   }
   const shareText = lines.join('\n');
 
@@ -2606,9 +2815,9 @@ async function shareOrSaveSummary() {
     }
 
     if (btn) {
-      btn.textContent = '✓ บันทึกและคัดลอกคำทำนายแล้ว';
+      btn.textContent = isEn ? '✓ Saved & copied reading' : '✓ บันทึกและคัดลอกคำทำนายแล้ว';
       setTimeout(() => {
-        if (btn) btn.textContent = '✦ แชร์ / บันทึกคำทำนาย';
+        if (btn) btn.textContent = t('btnShareSummary');
       }, 2600);
     }
   } catch (err) {
@@ -2616,9 +2825,9 @@ async function shareOrSaveSummary() {
       await navigator.clipboard.writeText(shareText).catch(() => {});
     }
     if (btn) {
-      btn.textContent = '✓ คัดลอกคำทำนายแล้ว';
+      btn.textContent = isEn ? '✓ Copied reading' : '✓ คัดลอกคำทำนายแล้ว';
       setTimeout(() => {
-        if (btn) btn.textContent = '✦ แชร์ / บันทึกคำทำนาย';
+        if (btn) btn.textContent = t('btnShareSummary');
       }, 2600);
     }
   }
@@ -2674,6 +2883,8 @@ Object.assign(window, {
   confirmArmedCardSelection,
   closeDrawNoticeModal,
   closeRitualFocusModal,
+  dismissRitualFocusModal,
+  handleRitualFocusBackdropClick,
   acceptAnalyticsConsent,
   scrollToNextQuestCard,
   adjustSpreadZoom,
@@ -2736,6 +2947,23 @@ function toggleLanguage() {
       }
     }
   }
+  const isEn = nextLang === 'en';
+  updateBgmUI();
+  const proceedBtn = document.getElementById('btn-proceed-next');
+  if (proceedBtn && activeSpread) {
+    proceedBtn.textContent = activeSpread.card_count > 1 ? t('btnProceedCut') : t('btnProceedDraw');
+  }
+  const shuffleBadge = document.getElementById('shuffle-counter-badge');
+  if (shuffleBadge) {
+    shuffleBadge.textContent = isEn
+      ? `Shuffled ${shuffleCount} ${shuffleCount === 1 ? 'time' : 'times'}`
+      : `สับไพ่ไปแล้ว ${shuffleCount} ครั้ง`;
+  }
+  updateQuestionCharCounter();
+  const ritualModal = document.getElementById('ritual-focus-modal');
+  if (ritualModal && !ritualModal.classList.contains('hidden') && activeSpread) {
+    openRitualFocusModal(activeSpread);
+  }
   return nextLang;
 }
 
@@ -2776,11 +3004,11 @@ function initAnalyticsConsentGate() {
 window.addEventListener('DOMContentLoaded', () => {
   initStickyCompactHeader();
   initHeroCardShowcase();
+  applyLanguage(getCurrentLang());
   initSpreadNavigation();
   initStaticAssets();
   initAutoBgm();
   preloadAllBgmTracks();
-  applyLanguage('th');
   initAnalyticsConsentGate();
 
   window.addEventListener('scroll', updateQuestNavArrow, { passive: true });

@@ -1,6 +1,7 @@
 /**
  * THE CLOW — ระบบสลับภาษา (Thai / English)
  * ครอบคลุมทุกหน้าจอ ผังไพ่ ขั้นตอนพิธีกรรม แท่นวางไพ่ และป็อปอัปคำทำนาย
+ * English tone: warm, graceful, and clear (accessible A2–B1+ everyday English)
  */
 
 const LANG_STORAGE_KEY = 'clow_ui_lang';
@@ -8,56 +9,68 @@ const LANG_STORAGE_KEY = 'clow_ui_lang';
 const SPREAD_EN = {
   daily_single: {
     name: 'Daily Reading',
-    purpose: 'Draw 1 card to receive your guiding message for today (best performed in the morning).',
-    questionPlaceholder: 'Optional: share what is on your mind today (work, study, love, or decisions)...',
+    topicTags: ['Today’s Outlook', 'Daily Rhythm', 'Gentle Caution'],
+    purpose: 'Draw one card to receive a gentle guiding message for your day (best enjoyed in the morning to set a calm, clear tone).',
+    questionPlaceholder: 'Optional: share what is on your mind today (work, study, love, or a small decision)...',
     positions: {
-      1: { title: 'Daily Guidance', meaning: 'Core energy and direction to hold onto today' }
+      1: { title: 'Message for Today', meaning: 'The main energy and direction to keep close today' }
     }
   },
   love_cross: {
     name: 'Romance Reading',
-    purpose: 'A 7-card spread from the official guidebook revealing your loved one’s nature, past, present, future, obstacle, outcome, and advice.',
-    questionPlaceholder: 'Optional: describe your relationship situation or feelings you wish to ask about...',
+    topicTags: ['Crush', 'Dating', 'Partner · Couple'],
+    purpose: 'A 7-card spread from the original guidebook showing their true nature, your past, present, future, obstacle, outcome, and advice.',
+    ritualNoticeTitle: 'Set Your Intention Before Reading',
+    ritualNoticeBody: 'Close your eyes for a quiet moment and <span class="text-[#9F1239]">picture the face or name of the person you love or like</span> as you shuffle, cut, and choose your cards.',
+    ritualNoticeTip: 'Guidebook tip: wearing something pink or keeping pink flowers nearby is said to brighten the gentle energy of love.',
+    questionPlaceholder: 'Optional: tell us about your feelings, your crush, or the relationship you wish to ask about...',
     positions: {
-      1: { title: 'Their True Nature', meaning: 'Personality and true nature of the person you like or love' },
-      2: { title: 'Past Situation', meaning: 'Past history and dynamics between you and them' },
-      3: { title: 'Present Situation', meaning: 'Where things stand between you two right now' },
-      4: { title: 'Future Outlook', meaning: 'Near-future direction for you and the person' },
-      5: { title: 'Obstacle to Overcome', meaning: 'The problem to overcome to get along well together' },
-      6: { title: 'Romantic Result', meaning: 'The final outcome of your romance' },
-      7: { title: 'Relationship Advice', meaning: 'Advice for cultivating a good relationship' }
+      1: { title: 'Their True Nature', meaning: 'The personality and heart of the person you like or love' },
+      2: { title: 'Your Shared Past', meaning: 'The moments and feelings that shaped you two before now' },
+      3: { title: 'The Present Moment', meaning: 'Where your connection stands right now' },
+      4: { title: 'Near Future', meaning: 'How your story together is likely to unfold next' },
+      5: { title: 'Obstacle to Overcome', meaning: 'The challenge to gently work through so you grow closer' },
+      6: { title: 'Romantic Outcome', meaning: 'Where this love story is heading' },
+      7: { title: 'Advice for Love', meaning: 'Warm, practical guidance to help your bond bloom' }
     }
   },
   general_six: {
     name: 'General Reading',
-    purpose: 'A 10-card spread from the official guidebook exploring the subject, cause, past, surroundings, solution, key, obstacle, future, result, and outlook.',
-    questionPlaceholder: 'Optional: share a situation about work, study, finances, or an important decision...',
+    topicTags: ['Work', 'Study', 'Finances', 'Decisions'],
+    purpose: 'A 10-card spread from the original guidebook looking closely at the heart of your matter, its cause, past, surroundings, solution, key, obstacle, future, and result.',
+    questionPlaceholder: 'Optional: share a question about work, study, money, or an important choice on your mind...',
     positions: {
-      1: { title: 'Subject of the Matter', meaning: 'The core topic or issue you are asking about' },
-      2: { title: 'Cause of the Matter', meaning: 'Root cause behind the situation' },
-      3: { title: 'Past Problems', meaning: 'Past issues linked to this matter' },
-      4: { title: 'Surrounding Circumstances', meaning: 'External factors and environment around you' },
-      5: { title: 'Solution', meaning: 'How to resolve the matter' },
-      6: { title: 'Key to Resolution', meaning: 'Keyword or turning point for solving the issue' },
-      7: { title: 'Obstacle', meaning: 'Obstacle when working toward a solution' },
-      8: { title: 'Future of the Matter', meaning: 'How the situation develops next' },
-      9: { title: 'End Result', meaning: 'Final outcome of the situation' },
-      10: { title: 'Others’ View & Long-Term', meaning: 'How others perceive it and the long-term outlook' }
+      1: { title: 'Heart of the Matter', meaning: 'The core theme of the situation you are asking about' },
+      2: { title: 'Root Cause', meaning: 'What quietly led to this situation' },
+      3: { title: 'Past Influence', meaning: 'Earlier moments still connected to this matter' },
+      4: { title: 'Around You Now', meaning: 'The people and environment surrounding you' },
+      5: { title: 'Path to a Solution', meaning: 'A clear way forward to ease the situation' },
+      6: { title: 'Key Turning Point', meaning: 'The key idea or habit that unlocks the answer' },
+      7: { title: 'Obstacle Ahead', meaning: 'What to watch out for along the way' },
+      8: { title: 'Future Direction', meaning: 'How things are likely to move next' },
+      9: { title: 'Final Outcome', meaning: 'The destination this path leads toward' },
+      10: { title: 'Others’ View & Long Term', meaning: 'How people see this and what it means in the long run' }
     }
   },
   compatibility_52: {
     name: 'Compatibility Reading',
-    purpose: 'Uses all 52 cards with automatic adjacent suit pairing to measure compatibility, plus cause & advice cards.',
-    questionPlaceholder: 'Optional: share the relationship context between the two people...',
+    topicTags: ['Friends', 'Crush · Partner', 'Coworkers', 'Family'],
+    purpose: 'Uses all 52 cards to pair matching suits placed side by side, measuring how well two people click—plus cards for cause and advice.',
+    ritualNoticeTitle: 'Set Your Intention for Compatibility',
+    ritualNoticeBody: 'Take a calm breath and <span class="text-[#9F1239]">picture the faces or names of the two people</span> (you and someone else, or any two people) as you shuffle and cut the deck.',
+    ritualNoticeTip: 'All 52 cards will open and automatically pair matching suits placed side by side. The fewer cards left, the stronger the harmony.',
+    questionPlaceholder: 'Optional: share who you are checking compatibility for (a friend, partner, crush, or coworker)...',
     positions: {
-      1: { title: 'Leftmost Card · Cause / Obstacle', meaning: 'Root cause or friction affecting compatibility' },
-      2: { title: 'Rightmost Card · Advice', meaning: 'Guidance to foster a healthier, smoother bond' }
+      1: { title: 'Leftmost Card · Cause or Friction', meaning: 'What may create distance or misunderstanding between you two' },
+      2: { title: 'Rightmost Card · Gentle Advice', meaning: 'A thoughtful way to build smoother understanding together' }
     }
   }
 };
 
 const DICT = {
   th: {
+    pageTitle: 'The Clow Cardcaptor Sakura — ทำนายไพ่ซากุระ',
+    headerSubtitle: '— คัมภีร์พยากรณ์ไพ่ (52 ใบ)',
     navHome: 'หน้าหลัก',
     heroTitle: 'เปิดตำราพยากรณ์ไพ่โคลว์การ์ด',
     heroSub: 'สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ',
@@ -73,23 +86,29 @@ const DICT = {
     questionLabel: '✦ ฝากคำถามหรือเล่าเรื่องราวที่ต้องการให้ไพ่ชี้แนะ <span class="text-[#8A5414]">(ไม่บังคับ · ข้ามได้)</span>',
     privacyTitle: 'การคุ้มครองข้อมูลส่วนบุคคลและความลับของคุณ',
     privacyBody: 'ข้อความที่คุณฝากไว้จะถูกส่งไปประมวลผลคู่กับชื่อไพ่แบบชั่วคราวเฉพาะรอบการเปิดไพ่นี้เท่านั้น <strong>ไม่มีการบันทึกลงฐานข้อมูลและไม่เก็บประวัติส่วนตัว</strong>',
+    fairnessNotice: '✦ <strong class="font-fahkwang text-[#4F2031]">การสับและเลือกไพ่เป็นอิสระจากคำถาม:</strong> ไพ่ทั้ง 52 ใบมีโอกาสถูกหยิบเท่ากันทุกใบอย่างเป็นธรรม คำถามที่คุณฝากไว้จะใช้เพื่อช่วยตีความให้ตรงเรื่องของคุณหลังจากเปิดไพ่แล้วเท่านั้น',
     aiNoteDefault: '✦ ระบบมี 2 รูปแบบ: <strong>AI วิเคราะห์เรื่องราวของคุณโดยตรง</strong> และ <strong>คำทำนายจากตำราโคลว์</strong> (หากโควตา AI ช่วงนั้นเต็ม ระบบจะสลับใช้ตำราโคลว์ให้อัตโนมัติ)',
-    btnSkipQuestion: 'ข้ามขั้นตอนนี้ (อธิษฐานในใจ) →',
-    btnSubmitQuestion: '✦ บันทึกคำถามลงจิต · ไปสับไพ่',
+    btnSkipQuestion: 'ข้าม (อธิษฐานในใจ) →',
+    btnSubmitQuestion: '✦ สับไพ่ทันที',
     shuffleTitle: 'ตั้งจิตและสับสำรับไพ่',
     shuffleSub: 'การสับไพ่คือการรวบรวมสมาธิและฝากคำถามลงสู่สำรับ แตะที่กองไพ่ซ้ำๆ จนกว่าจะรู้สึกพร้อม',
-    btnShuffleDeck: '↻ สับสำรับไพ่',
-    btnProceedCut: '✦ พอใจแล้ว · ไปตัดกองไพ่',
-    btnProceedDraw: '✦ พอใจแล้ว · ไปเลือกไพ่',
+    btnShuffleDeck: '↻ สับไพ่',
+    btnProceedCut: '✦ ไปตัดกองไพ่ →',
+    btnProceedDraw: '✦ ไปเลือกไพ่ →',
     cutTitle: 'ตัดแบ่งครึ่งกองไพ่',
     cutSub: 'การตัดไพ่คือการปิดรับคำถามและรวมพลังสมาธิ แตะที่กองไพ่เพื่อแบ่งครึ่งสำรับและสลับวางซ้อนกันก่อนเปิดไพ่',
-    btnCutDeck: '✦ ตัดแบ่งครึ่งกองไพ่',
+    cutBottomLabel: 'กองครึ่งล่าง',
+    cutTargetLabel: 'จุดวาง<br>กองตัด',
+    btnCutDeck: '✂ ตัดกองไพ่',
     drawTitle: 'เลือกไพ่จากสำรับ',
     drawHintDefault: 'ใช้ความรู้สึกแวบแรก แตะเลือกใบที่สะดุดตาที่สุดจากสำรับ 52 ใบ',
     drawHintHover: 'แตะไพ่ครั้งแรกเพื่อยกขึ้น แล้วแตะซ้ำอีกครั้งเพื่อยืนยันเลือก',
     drawHintConfirm: '✦ แตะไพ่ใบเดิมอีกครั้งเพื่อยืนยันการเลือก',
-    btnQuickDraw: '✦ ให้โชคชะตาเลือกให้ 1 ใบ',
-    btnConfirmArmed: '✦ คลิกเพื่อเลือก',
+    btnQuickDraw: '✦ ให้ชะตาเลือก 1 ใบ',
+    btnQuickDrawAll: '✦ ให้ชะตาเลือกทั้งหมด',
+    btnConfirmArmed: '✦ เลือกใบนี้',
+    restingDeckTitle: 'สำรับไพ่ที่เหลือ',
+    restingDeckSub: 'อัญเชิญไพ่ครบตามผังแล้ว แตะที่หลังไพ่บนแท่นเพื่อเปิดคำทำนาย',
     boardHintChoose: 'เลือกไพ่จากกองด้านบนเพื่อวางลงตำแหน่ง',
     boardHintDone: 'เปิดเผยไพ่ครบทุกตำแหน่งแล้ว',
     boardGuideDefault: 'เชื่อในความรู้สึกแวบแรกแล้วแตะเลือกไพ่ใบที่สะดุดตาที่สุดโดยไม่ต้องลังเล',
@@ -97,91 +116,127 @@ const DICT = {
     slotEmpty: 'ตำแหน่งว่าง',
     slotWaitAll: 'รอเลือกให้ครบ',
     slotFaceDown: 'คว่ำหน้า',
-    btnRevealAll: '✦ เปิดไพ่ทั้งหมดและดูบทสรุป',
-    summaryCtaTitle: '✦ เปิดอ่านไพ่ครบทุกตำแหน่งแล้ว',
-    summaryCtaSub: 'ชมบทสรุปคำทำนายรวมทุกใบ',
-    btnFullSummary: '✦ อ่านบทสรุปคำทำนายรวม',
+    btnRevealAll: '✦ เปิดทั้งหมดและดูสรุป',
+    summaryCtaTitle: '✦ เปิดอ่านไพ่เรียบร้อยแล้ว',
+    summaryCtaSub: 'ชมบทสรุปคำทำนาย หรือเลือกการทำนายรูปแบบอื่น',
+    btnFullSummary: '✦ ดูบทสรุป',
+    btnOtherSpreads: 'การทำนายอื่น',
+    consentTitle: 'ขอความยินยอมการจัดเก็บสถิติและการใช้งาน',
+    consentBody: 'เว็บไซต์นี้มีการเก็บข้อมูลสถิติการใช้งานแบบ<strong>ไม่ระบุตัวตน</strong> เพื่อนำไปพัฒนาประสบการณ์การใช้งานให้ดียิ่งขึ้น',
+    consentBox: '<strong>ไม่มีการเก็บข้อมูลส่วนบุคคล และจะไม่เก็บความลับ คำถาม หรือปัญหาที่ผู้ใช้ฝากไว้โดยเด็ดขาด</strong>',
+    btnAcceptConsent: '✦ ยินยอมและเริ่มต้น',
+    btnConfirmRitualFocus: '✦ เริ่มทำนาย',
     drawNoticeTitle: 'คลี่ไพ่ครบทั้ง 52 ใบแล้ว',
     drawNoticeBody: 'โปรดสำรวมจิตและเลือกไพ่คว่ำใบที่ท่านรู้สึก<strong>ถูกชะตา</strong>หรือสะดุดตาที่สุดในความรู้สึกแวบแรก',
     drawNoticeWarnTitle: '⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้',
     drawNoticeWarnBody: 'เมื่อแตะเลือกไพ่แล้ว หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น',
-    btnConfirmDrawNotice: '✦ เข้าใจแล้ว · เริ่มเลือกไพ่',
-    btnCloseModal: 'ปิดหน้าต่าง ✕',
+    btnConfirmDrawNotice: '✦ เริ่มเลือกไพ่',
+    btnCloseModal: 'ปิด ✕',
     singleCardReadingHeader: '✦ คำทำนายตามตำแหน่งนี้',
-    singleCardWarningHeader: '☽ ไพ่ต้องการเตือนคุณว่า',
-    btnViewSummarySmall: 'ดูบทสรุปคำทำนาย',
+    singleCardWarningHeader: '☽ สารนำทางจากไพ่',
+    btnPrevCard: '← ใบก่อนหน้า',
+    btnNextCard: 'ใบถัดไป →',
+    btnViewSummarySmall: 'ดูบทสรุป',
     summaryHeader: 'บทสรุปคำพยากรณ์',
-    summaryOverviewHeader: '✦ ภาพรวมคำทำนาย',
-    summaryWarningHeader: '☽ ไพ่เหล่านี้ต้องการเตือนคุณว่า',
-    btnShareSummary: '✦ แชร์ / บันทึกคำทำนาย',
+    summaryOverviewHeader: '✦ คำตอบภาพรวมสำหรับคำถามของคุณ',
+    summaryWarningHeader: '☽ สารนำทางจากไพ่',
+    btnShareSummary: '✦ แชร์ / บันทึก',
     modeNoteLive: '✦ เรียบเรียงคำทำนายเฉพาะเรื่องราวของคุณด้วย AI',
     modeNoteDemo: '✦ สรุปคำทำนายจากตำราโคลว์ (โหมดสำรองเมื่อใช้งานออฟไลน์หรือโควตา AI เต็มชั่วคราว)',
     bgmLabel: 'เพลง: ',
     bgmOn: 'เปิด',
-    bgmOff: 'ปิด'
+    bgmOff: 'ปิด',
+    footerFanmade: '✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)',
+    footerFeedback: 'ส่งข้อเสนอแนะ',
+    loadingSummaryTitle: '☽ กำลังร้อยเรียงบทสรุปคำทำนาย...',
+    loadingSummarySub: 'โปรดรอสักครู่',
+    scrollUp: '↑ เลื่อนขึ้น',
+    scrollDown: '↓ เลื่อนลง'
   },
   en: {
+    pageTitle: 'The Clow — Cardcaptor Sakura Fortune Reading',
+    headerSubtitle: '— The 52-Card Fortune Grimoire',
     navHome: 'Home',
-    heroTitle: 'Open the Ancient Clow Card Grimoire',
-    heroSub: 'Quiet your mind like a steady candle flame, focus on your question, and choose a 52-card spread.',
+    heroTitle: 'Open the Clow Card Grimoire',
+    heroSub: 'Calm your heart like a steady candle flame, hold your question gently in mind, and choose a 52-card spread.',
     btnShuffleNew: '↻ Reshuffle',
-    boardTitle: 'Oracle Spread Board (Reveal in Order)',
-    stepperQuestion: 'Question (Optional)',
+    boardTitle: 'Clow Card Spread Board (Open in Order)',
+    stepperQuestion: 'Question (Opt.)',
     stepperShuffle: 'Shuffle',
-    stepperShuffleAlt: 'Shuffle Deck',
-    stepperCut: 'Cut Deck',
-    stepperDraw: 'Choose Cards',
-    questionTitle: 'Focus Your Mind & Share Context (Optional)',
-    questionSub: 'Putting your thoughts or question into words helps tailor the interpretation more closely to your situation.',
-    questionLabel: '✦ Share your question or situation <span class="text-[#8A5414]">(Optional · Skippable)</span>',
-    privacyTitle: 'Your Privacy & Confidentiality',
-    privacyBody: 'Your text stays on your device. When you view the summary, only your question and drawn card names are processed temporarily — <strong>never saved to any database or personal history</strong>.',
-    aiNoteDefault: '✦ Two reading modes: <strong>Personalized AI interpretation</strong> and <strong>Clow Guidebook synthesis</strong> (automatically switches to the guidebook if AI quota is temporarily full).',
+    stepperShuffleAlt: 'Shuffle',
+    stepperCut: 'Cut',
+    stepperDraw: 'Draw',
+    questionTitle: 'What’s on Your Mind? (Optional)',
+    questionSub: 'Sharing your question in a few words helps the cards speak more closely to your situation.',
+    questionLabel: '✦ Your question or story <span class="text-[#8A5414]">(Optional)</span>',
+    privacyTitle: 'Your Privacy Comes First',
+    privacyBody: 'Your question is only used for this reading and is <strong>never saved to any database or personal history</strong>.',
+    fairnessNotice: '✦ <strong class="font-fahkwang text-[#4F2031]">Fair & Independent Draw:</strong> All 52 cards have an equal chance of being drawn. Your question only shapes the message after your cards are picked.',
+    aiNoteDefault: '✦ Two reading modes: <strong>Personalized AI insight</strong> and <strong>Clow Guidebook reading</strong> (switches smoothly to the guidebook if AI quota is busy).',
     btnSkipQuestion: 'Skip (Keep in Mind) →',
-    btnSubmitQuestion: '✦ Focus Question · Shuffle',
-    shuffleTitle: 'Focus & Shuffle the Deck',
-    shuffleSub: 'Tap the deck repeatedly while holding your intention until you feel ready to proceed.',
-    btnShuffleDeck: '↻ Shuffle Deck',
-    btnProceedCut: '✦ Ready · Cut the Deck',
-    btnProceedDraw: '✦ Ready · Choose Cards',
-    cutTitle: 'Cut the Deck in Half',
-    cutSub: 'Tap the deck to split it into two halves and restack them with focused intention before drawing.',
-    btnCutDeck: '✦ Cut the Deck',
+    btnSubmitQuestion: '✦ Shuffle Now',
+    shuffleTitle: 'Focus & Shuffle',
+    shuffleSub: 'Tap the deck as you hold your question in mind, until you feel ready.',
+    btnShuffleDeck: '↻ Shuffle',
+    btnProceedCut: '✦ Cut Deck →',
+    btnProceedDraw: '✦ Draw Cards →',
+    cutTitle: 'Cut the Deck',
+    cutSub: 'Tap the deck to split it in half and restack it before you draw.',
+    cutBottomLabel: 'Bottom Half',
+    cutTargetLabel: 'Place<br>Cut Here',
+    btnCutDeck: '✂ Cut Deck',
     drawTitle: 'Choose Your Cards',
-    drawHintDefault: 'Trust your first instinct and select the card that catches your eye from the 52-card spread.',
-    drawHintHover: 'Tap once to lift a card, then tap it again to confirm your choice.',
-    drawHintConfirm: '✦ Tap the same card again to confirm selection',
-    btnQuickDraw: '✦ Let Fate Pick 1 Card',
-    btnConfirmArmed: '✦ Click to Confirm',
-    boardHintChoose: 'Choose cards above to place them onto the board',
-    boardHintDone: 'All positions have been revealed',
-    boardGuideDefault: 'Trust your intuition and select the card that draws your attention.',
-    slotWaiting: 'Next Slot',
+    drawHintDefault: 'Trust your first instinct and tap the card that quietly catches your eye.',
+    drawHintHover: 'Tap a card once to lift it, then tap again to confirm.',
+    drawHintConfirm: '✦ Tap the same card again to confirm',
+    btnQuickDraw: '✦ Let Fate Pick 1',
+    btnQuickDrawAll: '✦ Let Fate Pick All',
+    btnConfirmArmed: '✦ Pick This Card',
+    restingDeckTitle: 'Remaining Deck',
+    restingDeckSub: 'All cards are set. Tap each face-down card on the board to reveal its message.',
+    boardHintChoose: 'Choose a card above to place it on the board',
+    boardHintDone: 'All cards have been revealed',
+    boardGuideDefault: 'Trust your first instinct and choose the card that draws your eye.',
+    slotWaiting: 'Next Card',
     slotEmpty: 'Empty Slot',
     slotWaitAll: 'Draw all first',
     slotFaceDown: 'Face Down',
-    btnRevealAll: '✦ Reveal All & View Summary',
-    summaryCtaTitle: '✦ All cards have been revealed',
-    summaryCtaSub: 'View your complete reading summary',
-    btnFullSummary: '✦ View Full Reading Summary',
-    drawNoticeTitle: 'All 52 Cards Are Spread',
-    drawNoticeBody: 'Quiet your mind and follow your intuition to select the face-down card that calls to you.',
-    drawNoticeWarnTitle: '⚠ Cards cannot be changed once selected',
-    drawNoticeWarnBody: 'If you wish to pick different cards, you will need to click Reshuffle to start over.',
-    btnConfirmDrawNotice: '✦ Understood · Start Choosing',
+    btnRevealAll: '✦ Reveal All & Summary',
+    summaryCtaTitle: '✦ Your reading is complete',
+    summaryCtaSub: 'Read your full summary or explore another spread',
+    btnFullSummary: '✦ View Summary',
+    btnOtherSpreads: 'Other Spreads',
+    consentTitle: 'Anonymous Usage & Privacy Notice',
+    consentBody: 'This site collects simple, <strong>anonymous</strong> usage stats to help us keep improving the experience.',
+    consentBox: '<strong>We never collect personal data, and your private questions or stories are never stored.</strong>',
+    btnAcceptConsent: '✦ Agree & Enter',
+    btnConfirmRitualFocus: '✦ Begin',
+    drawNoticeTitle: 'All 52 Cards Ready',
+    drawNoticeBody: 'Take a calm breath and pick the face-down card that <strong>speaks to you first</strong>.',
+    drawNoticeWarnTitle: '⚠ Every pick is final',
+    drawNoticeWarnBody: 'To draw different cards, just tap Reshuffle to start fresh.',
+    btnConfirmDrawNotice: '✦ Choose Cards',
     btnCloseModal: 'Close ✕',
-    singleCardReadingHeader: '✦ Position Interpretation',
-    singleCardWarningHeader: '☽ Card Caution',
+    singleCardReadingHeader: '✦ Message for This Position',
+    singleCardWarningHeader: '☽ Guiding Message from the Card',
+    btnPrevCard: '← Previous',
+    btnNextCard: 'Next →',
     btnViewSummarySmall: 'View Summary',
-    summaryHeader: 'Oracle Reading Summary',
-    summaryOverviewHeader: '✦ Reading Overview',
-    summaryWarningHeader: '☽ These cards caution you',
-    btnShareSummary: '✦ Share / Save Summary',
-    modeNoteLive: '✦ Personalized interpretation crafted for your story with AI',
-    modeNoteDemo: '✦ Clow Guidebook synthesis (offline preview or temporary AI quota fallback)',
+    summaryHeader: 'Your Reading Summary',
+    summaryOverviewHeader: '✦ Overall Answer for Your Question',
+    summaryWarningHeader: '☽ Guiding Message from the Cards',
+    btnShareSummary: '✦ Share / Save',
+    modeNoteLive: '✦ Personalized reading woven for your question with AI',
+    modeNoteDemo: '✦ Clow Guidebook reading (offline preview or temporary AI fallback)',
     bgmLabel: 'Music: ',
     bgmOn: 'On',
-    bgmOff: 'Off'
+    bgmOff: 'Off',
+    footerFanmade: '✦ Fanmade project inspired by the original Clow Card Fortune Book (with AI personalized summaries)',
+    footerFeedback: 'Send Feedback',
+    loadingSummaryTitle: '☽ Weaving your reading summary...',
+    loadingSummarySub: 'Please wait a moment',
+    scrollUp: '↑ Scroll Up',
+    scrollDown: '↓ Scroll Down'
   }
 };
 
@@ -215,6 +270,31 @@ export function getSpreadPurpose(spread) {
   return spread.purpose;
 }
 
+export function getSpreadTopicTags(spread) {
+  if (!spread) return [];
+  if (getCurrentLang() === 'en' && Array.isArray(SPREAD_EN[spread.spread_id]?.topicTags)) {
+    return SPREAD_EN[spread.spread_id].topicTags;
+  }
+  return Array.isArray(spread.topicTags) ? spread.topicTags : [];
+}
+
+export function getSpreadRitualNotice(spread) {
+  if (!spread) return { title: '', body: '', tip: '' };
+  if (getCurrentLang() === 'en' && SPREAD_EN[spread.spread_id]) {
+    const en = SPREAD_EN[spread.spread_id];
+    return {
+      title: en.ritualNoticeTitle || '',
+      body: en.ritualNoticeBody || '',
+      tip: en.ritualNoticeTip || ''
+    };
+  }
+  return {
+    title: spread.ritualNoticeTitle || '',
+    body: spread.ritualNoticeBody || '',
+    tip: spread.ritualNoticeTip || ''
+  };
+}
+
 export function getSpreadPlaceholder(spread) {
   if (!spread) return '';
   if (getCurrentLang() === 'en' && SPREAD_EN[spread.spread_id]) {
@@ -246,33 +326,52 @@ export function applyLanguage(lang) {
   } catch (_) {}
 
   document.documentElement.lang = safeLang;
+  document.title = t('pageTitle');
 
   const langBtn = document.getElementById('btn-lang-toggle');
   if (langBtn) {
-    langBtn.textContent = safeLang === 'en' ? 'EN / ไทย' : 'ไทย / EN';
+    langBtn.innerHTML =
+      safeLang === 'en'
+        ? '<span class="font-bold text-[#2A160E]">EN</span><span class="opacity-45 mx-0.5">/</span><span class="opacity-55">TH</span>'
+        : '<span class="opacity-55">EN</span><span class="opacity-45 mx-0.5">/</span><span class="font-bold text-[#2A160E]">TH</span>';
     langBtn.title = safeLang === 'en' ? 'Switch to Thai' : 'Switch to English';
   }
 
   const mapText = [
-    // Home button uses icon-only SVG to save header space
+    ['#header-subtitle-text', 'headerSubtitle'],
     ['#screen-select h1', 'heroTitle'],
-    ['#screen-select header p', 'heroSub'],
+    ['#hero-subtitle-text', 'heroSub'],
     ['#btn-shuffle', 'btnShuffleNew'],
     ['#board-area > div:first-child span.font-fahkwang', 'boardTitle'],
+    ['#privacy-title', 'privacyTitle'],
     ['#ritual-question-stage button[onclick="skipQuestionStep()"]', 'btnSkipQuestion'],
     ['#ritual-question-stage button[onclick="submitQuestionStep()"]', 'btnSubmitQuestion'],
     ['#btn-shuffle-action', 'btnShuffleDeck'],
+    ['#cut-bottom-label', 'cutBottomLabel'],
     ['#btn-trigger-cut', 'btnCutDeck'],
     ['#btn-quick-draw', 'btnQuickDraw'],
+    ['#btn-quick-draw-all', 'btnQuickDrawAll'],
     ['#btn-confirm-armed-card', 'btnConfirmArmed'],
+    ['#resting-deck-title', 'restingDeckTitle'],
+    ['#resting-deck-sub', 'restingDeckSub'],
     ['#board-reveal-all-footer button', 'btnRevealAll'],
-    ['#board-summary-cta > div p:first-child', 'summaryCtaTitle'],
-    ['#board-summary-cta > div p:last-child', 'summaryCtaSub'],
-    ['#board-summary-cta button', 'btnFullSummary'],
+    ['#board-summary-cta-title', 'summaryCtaTitle'],
+    ['#board-summary-cta-sub', 'summaryCtaSub'],
+    ['#btn-board-summary', 'btnFullSummary'],
+    ['#btn-board-other-spreads', 'btnOtherSpreads'],
+    ['#analytics-consent-title', 'consentTitle'],
+    ['#btn-accept-consent', 'btnAcceptConsent'],
+    ['#btn-confirm-ritual-focus', 'btnConfirmRitualFocus'],
     ['#draw-notice-title', 'drawNoticeTitle'],
+    ['#draw-notice-warn-title', 'drawNoticeWarnTitle'],
+    ['#draw-notice-warn-body', 'drawNoticeWarnBody'],
     ['#btn-confirm-draw-notice', 'btnConfirmDrawNotice'],
     ['#reading-modal button[onclick="closeReadingModal()"]', 'btnCloseModal'],
-    ['#btn-share-summary', 'btnShareSummary']
+    ['#modal-scroll-up-btn', 'scrollUp'],
+    ['#modal-scroll-down-btn', 'scrollDown'],
+    ['#btn-share-summary', 'btnShareSummary'],
+    ['#footer-fanmade-note', 'footerFanmade'],
+    ['#footer-feedback-label', 'footerFeedback']
   ];
 
   mapText.forEach(([sel, key]) => {
@@ -282,16 +381,40 @@ export function applyLanguage(lang) {
 
   const mapHtml = [
     ['#ritual-question-stage label[for="user-question-input"]', 'questionLabel'],
+    ['#privacy-body', 'privacyBody'],
+    ['#fairness-notice', 'fairnessNotice'],
+    ['#cut-target-label', 'cutTargetLabel'],
+    ['#analytics-consent-body', 'consentBody'],
+    ['#analytics-consent-box', 'consentBox'],
     ['#draw-notice-modal > div > p', 'drawNoticeBody']
   ];
   mapHtml.forEach(([sel, key]) => {
     const el = document.querySelector(sel);
     if (el) el.innerHTML = t(key);
   });
+
+  const attrMap = [
+    ['#btn-home', safeLang === 'en' ? 'Home' : 'หน้าหลัก', true],
+    ['#btn-bgm-toggle', safeLang === 'en' ? 'Toggle background music' : 'เปิดหรือปิดเสียงเพลงบรรเลง', false],
+    ['button[onclick="prevBgmTrack()"]', safeLang === 'en' ? 'Previous track' : 'เพลงก่อนหน้า', true],
+    ['button[onclick="nextBgmTrack()"]', safeLang === 'en' ? 'Next track' : 'เพลงถัดไป', true],
+    ['button[onclick="dismissRitualFocusModal()"]', safeLang === 'en' ? 'Close and go back' : 'ปิดและกลับไปหน้าเดิม', true],
+    ['#interactive-deck-touchzone', safeLang === 'en' ? 'Tap to shuffle the deck' : 'แตะเพื่อสับสำรับไพ่', false],
+    ['#cut-deck-touchzone', safeLang === 'en' ? 'Tap to cut the deck' : 'แตะเพื่อตัดแบ่งครึ่งกองไพ่', false],
+    ['button[onclick="adjustSpreadZoom(-0.15)"]', safeLang === 'en' ? 'Zoom out' : 'ซูมออก', true],
+    ['button[onclick="resetSpreadZoom()"]', safeLang === 'en' ? 'Reset board zoom' : 'รีเซ็ตขนาดแท่นไพ่', false],
+    ['button[onclick="adjustSpreadZoom(0.15)"]', safeLang === 'en' ? 'Zoom in' : 'ซูมเข้า', true]
+  ];
+  attrMap.forEach(([sel, label, setAria]) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.setAttribute('title', label);
+    if (setAria) el.setAttribute('aria-label', label);
+  });
 }
 
 export function toggleLanguage() {
-  const next = getCurrentLang() === 'th' ? 'en' : 'th';
+  const next = getCurrentLang() === 'en' ? 'th' : 'en';
   applyLanguage(next);
   return next;
 }

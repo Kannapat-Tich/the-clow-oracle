@@ -5,7 +5,8 @@
  * 2. แก้ไขบั๊ก attribute `loop` บน <audio> เพื่อให้จบเพลงแล้วเล่นเพลงถัดไปอัตโนมัติได้จริง
  */
 
-import { BGM_TRACKS } from '../data/bgm.js';
+import { BGM_TRACKS } from '../data/bgm.js?v=20261124e';
+import { getCurrentLang, t } from './i18n.js?v=20261124r';
 
 let audioCtx = null;
 const isSoundOn = true;
@@ -115,8 +116,10 @@ export function updateBgmUI(statusOverride = null) {
   const titleBox = document.getElementById('bgm-track-title');
   const titleInner = document.getElementById('bgm-track-title-inner');
 
+  const isEn = getCurrentLang() === 'en';
   const track = BGM_TRACKS[currentBgmTrackIdx] || BGM_TRACKS[0];
-  const displayTitle = statusOverride || (track ? track.title : 'ไม่มีเพลง');
+  const trackTitle = track ? (isEn && track.titleEn ? track.titleEn : track.title) : (isEn ? 'No Music' : 'ไม่มีเพลง');
+  const displayTitle = statusOverride || trackTitle;
   if (titleInner && titleBox) {
     titleInner.classList.remove('bgm-marquee-active');
     titleInner.textContent = displayTitle;
@@ -135,12 +138,12 @@ export function updateBgmUI(statusOverride = null) {
   if (!statusEl || !iconEl || !btnEl) return;
 
   if (isBgmPlaying) {
-    statusEl.innerHTML = '<span class="hidden sm:inline">เพลง: </span>เปิด';
+    statusEl.innerHTML = `<span class="hidden sm:inline">${t('bgmLabel')}</span>${t('bgmOn')}`;
     iconEl.textContent = '♫';
     btnEl.classList.add('bg-[#F8DF94]');
     btnEl.classList.remove('bg-[#FCF4DC]');
   } else {
-    statusEl.innerHTML = '<span class="hidden sm:inline">เพลง: </span>ปิด';
+    statusEl.innerHTML = `<span class="hidden sm:inline">${t('bgmLabel')}</span>${t('bgmOff')}`;
     iconEl.textContent = '♩';
     btnEl.classList.remove('bg-[#F8DF94]');
     btnEl.classList.add('bg-[#FCF4DC]');

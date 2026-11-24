@@ -26,7 +26,7 @@
   <link rel="preload" as="image" href="./assets/cards/sword.webp" />
   <link rel="preload" as="image" href="./assets/ui/clow_magic_circle.webp" />
 
-  <link rel="stylesheet" href="./styles/grimoire.css?v=20261123" />
+  <link rel="stylesheet" href="./styles/grimoire.css?v=20261124a" />
 </head>
 <body class="flex flex-col justify-between">
   <div class="dusty-paper-grain" aria-hidden="true"></div>
@@ -125,10 +125,20 @@
     </svg>
   </div>
 
+  <!-- Top Utility Bar: Language Toggle (non-sticky, stays at top of page) -->
+  <div class="relative z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-[calc(0.5rem+env(safe-area-inset-top))] sm:pt-3 flex items-center justify-end">
+    <button id="btn-lang-toggle" onclick="toggleLanguage()"
+            class="whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-cinzel tracking-wider text-[#4F2031] bg-[#FCF4DC]/95 hover:bg-[#F8DF94] border border-[#8A5414]/80 shadow-xs transition leading-none"
+            title="Switch to English"
+            aria-label="Switch language">
+      EN / TH
+    </button>
+  </div>
+
   <!-- ======================================================================= -->
   <!-- STICKY & AUTO-COMPACTING HEADER                                         -->
   <!-- ======================================================================= -->
-  <header id="main-header" class="sticky top-0 z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 pb-1">
+  <header id="main-header" class="sticky top-0 z-30 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-1.5 sm:pt-2 pb-1">
     <div id="header-frame" class="vintage-frame rounded-lg px-3 sm:px-5 py-2.5 sm:py-3 flex flex-col gap-1.5">
       <span class="header-flourish hidden sm:block absolute top-1.5 left-2 text-[11px] text-[#8A5414] select-none">❧</span>
       <span class="header-flourish hidden sm:block absolute top-1.5 right-2 text-[11px] text-[#8A5414] select-none">☙</span>
@@ -163,7 +173,7 @@
               <span class="font-cinzel text-[11px] sm:text-base md:text-lg font-bold tracking-[0.08em] sm:tracking-[0.16em] text-[#2A160E] group-hover:text-[#4F2031] transition-colors">
                 CLOW CARDS
               </span>
-              <span class="header-subtitle hidden lg:inline font-charm text-base text-[#4F2031]">
+              <span id="header-subtitle-text" class="header-subtitle hidden lg:inline font-charm text-base text-[#4F2031]">
                 — คัมภีร์พยากรณ์ไพ่ (52 ใบ)
               </span>
             </div>
@@ -199,7 +209,7 @@
             </button>
 
             <span id="bgm-track-title"
-                  class="px-1 sm:px-1.5 py-1 text-[10px] sm:text-xs font-fahkwang text-[#2A160E] max-w-[74px] sm:max-w-[185px] overflow-hidden whitespace-nowrap block select-none leading-none">
+                  class="px-1 sm:px-1.5 py-1 text-[10px] sm:text-xs font-fahkwang text-[#2A160E] max-w-[92px] sm:max-w-[185px] overflow-hidden whitespace-nowrap block select-none leading-none">
               <span id="bgm-track-title-inner" class="inline-block whitespace-nowrap">Akogare (ความปรารถนา)</span>
             </span>
 
@@ -243,7 +253,7 @@
         <h1 class="font-charm text-2xl sm:text-3xl md:text-4xl text-[#2A160E] leading-snug">
           เปิดตำราพยากรณ์ไพ่โคลว์การ์ด
         </h1>
-        <p class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">
+        <p id="hero-subtitle-text" class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">
           สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ
         </p>
       </div>
@@ -312,14 +322,14 @@
 
           <div id="board-summary-cta" class="hidden mt-2.5 sm:mt-3 bg-[#F8DF94]/55 border border-[#4F2031]/45 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
             <div class="space-y-0.5">
-              <p class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">✦ เปิดอ่านไพ่เรียบร้อยแล้ว</p>
-              <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปคำทำนาย หรือเลือกการทำนายรูปแบบอื่น</p>
+              <p id="board-summary-cta-title" class="font-fahkwang text-xs sm:text-sm text-[#4F2031]">✦ เปิดอ่านไพ่เรียบร้อยแล้ว</p>
+              <p id="board-summary-cta-sub" class="font-pridi text-[11px] sm:text-xs text-[#523020]">ชมบทสรุปคำทำนาย หรือเลือกการทำนายรูปแบบอื่น</p>
             </div>
             <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
-              <button onclick="openBoardSummaryModal()" class="btn-vintage-plum whitespace-nowrap px-4 py-2 rounded-md text-xs font-fahkwang shrink-0">
+              <button id="btn-board-summary" onclick="openBoardSummaryModal()" class="btn-vintage-plum whitespace-nowrap px-4 py-2 rounded-md text-xs font-fahkwang shrink-0">
                 ✦ อ่านบทสรุปคำทำนาย
               </button>
-              <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] whitespace-nowrap px-3.5 py-2 rounded-md text-xs font-fahkwang shrink-0 transition-colors">
+              <button id="btn-board-other-spreads" onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] whitespace-nowrap px-3.5 py-2 rounded-md text-xs font-fahkwang shrink-0 transition-colors">
                 การทำนายอื่น ๆ
               </button>
             </div>
@@ -372,14 +382,14 @@
                   </svg>
                 </span>
                 <div class="space-y-0.5 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
-                  <p class="font-fahkwang text-[#4F2031]">การคุ้มครองข้อมูลส่วนบุคคลและความลับของคุณ</p>
-                  <p class="text-[#523020]">
+                  <p id="privacy-title" class="font-fahkwang text-[#4F2031]">การคุ้มครองข้อมูลส่วนบุคคลและความลับของคุณ</p>
+                  <p id="privacy-body" class="text-[#523020]">
                     ข้อความที่คุณฝากไว้จะถูกส่งไปประมวลผลคู่กับชื่อไพ่แบบชั่วคราวเฉพาะรอบการเปิดไพ่นี้เท่านั้น <strong>ไม่มีการบันทึกลงฐานข้อมูลและไม่เก็บประวัติส่วนตัว</strong>
                   </p>
                 </div>
               </div>
 
-              <div class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
+              <div id="fairness-notice" class="bg-[#F4DC9C]/55 border border-[#8A5414]/40 rounded-md px-3 py-2 font-pridi text-[11px] sm:text-xs text-[#2A160E] leading-relaxed">
                 ✦ <strong class="font-fahkwang text-[#4F2031]">การสับและเลือกไพ่เป็นอิสระจากคำถาม:</strong> ไพ่ทั้ง 52 ใบมีโอกาสถูกหยิบเท่ากันทุกใบอย่างเป็นธรรม คำถามที่คุณฝากไว้จะใช้เพื่อช่วยตีความให้ตรงเรื่องของคุณหลังจากเปิดไพ่แล้วเท่านั้น
               </div>
 
@@ -387,11 +397,11 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-2 pt-0.5">
-              <button onclick="skipQuestionStep()" class="btn-vintage-secondary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
-                ข้ามขั้นตอนนี้ (อธิษฐานในใจ) →
+              <button id="btn-skip-question" type="button" onclick="skipQuestionStep()" class="btn-vintage-secondary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0 transition-colors">
+                ข้าม (อธิษฐานในใจ) →
               </button>
-              <button onclick="submitQuestionStep()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
-                ✦ บันทึกคำถามลงจิต · ไปสับไพ่
+              <button id="btn-submit-question" type="button" onclick="submitQuestionStep()" disabled aria-disabled="true" class="bg-[#D6D3CD] text-[#7A756D] border border-[#B8B3AA] cursor-not-allowed opacity-85 whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0 transition-colors">
+                ✦ สับไพ่ทันที
               </button>
             </div>
           </div>
@@ -399,7 +409,7 @@
           <!-- PHASE 1: SHUFFLE STACK -->
           <div id="ritual-stack-stage" class="py-2 sm:py-2.5 flex flex-col items-center justify-center gap-2 sm:gap-2.5">
             <div class="flex flex-wrap items-center justify-center gap-2 w-full">
-              <button onclick="handleDeckStackInteraction()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
+              <button id="btn-shuffle-action" onclick="handleDeckStackInteraction()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
                 ↻ สับสำรับไพ่
               </button>
             </div>
@@ -433,22 +443,22 @@
                    onclick="performDeckCut()"
                    class="interactive-deck-wrap relative w-24 sm:w-28 md:w-32 clow-aspect select-none overflow-visible"
                    title="แตะเพื่อตัดแบ่งครึ่งกองไพ่">
-                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(-34px, 6px); z-index: 10;">
+                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(-50px, 6px); z-index: 10;">
                   <div class="w-full h-full absolute top-1.5 left-1.5 rounded-[7px] bg-[#3E1727]/85 border border-[#4A1F12]/80"></div>
                   <div id="cut-bottom-card" class="w-full h-full relative"></div>
-                  <span class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] text-[#523020] bg-[#FCF4DC]/80 px-1.5 rounded">
+                  <span id="cut-bottom-label" class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] text-[#523020] bg-[#FCF4DC]/80 px-1.5 rounded">
                     กองครึ่งล่าง
                   </span>
                 </div>
 
-                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(-38px, 0px); z-index: 20;">
+                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(-54px, 0px); z-index: 20;">
                   <div id="cut-top-card" class="w-full h-full relative"></div>
                 </div>
 
                 <div id="cut-target-ghost"
-                     style="transform: translate(36px, 6px);"
+                     style="transform: translate(52px, 6px);"
                      class="absolute inset-0 rounded-[7px] border-2 border-dashed border-[#8A5414]/65 bg-[#FCF4DC]/45 flex items-center justify-center pointer-events-none">
-                  <span class="font-fahkwang text-[10px] text-[#4F2031]/85 text-center px-1 leading-snug">
+                  <span id="cut-target-label" class="font-fahkwang text-[10px] text-[#4F2031]/85 text-center px-1 leading-snug">
                     จุดวาง<br>กองตัด
                   </span>
                 </div>
@@ -495,8 +505,8 @@
               <div id="resting-deck-back" class="w-full h-full relative z-10"></div>
             </div>
             <div class="space-y-0.5">
-              <p class="font-fahkwang text-xs text-[#2A160E]">สำรับไพ่ที่เหลือ</p>
-              <p class="font-pridi text-[11px] text-[#523020] leading-relaxed">
+              <p id="resting-deck-title" class="font-fahkwang text-xs text-[#2A160E]">สำรับไพ่ที่เหลือ</p>
+              <p id="resting-deck-sub" class="font-pridi text-[11px] text-[#523020] leading-relaxed">
                 อัญเชิญไพ่ครบตามผังแล้ว แตะที่หลังไพ่บนแท่นเพื่อเปิดคำทำนาย
               </p>
             </div>
@@ -522,16 +532,16 @@
         ขอความยินยอมการจัดเก็บสถิติและการใช้งาน
       </h3>
 
-      <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">
+      <p id="analytics-consent-body" class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">
         เว็บไซต์นี้มีการเก็บข้อมูลสถิติการใช้งานแบบ<strong>ไม่ระบุตัวตน</strong> เพื่อนำไปพัฒนาประสบการณ์การใช้งานให้ดียิ่งขึ้น
       </p>
 
-      <div class="bg-[#FCF4DC] border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#523020] leading-relaxed">
+      <div id="analytics-consent-box" class="bg-[#FCF4DC] border border-[#8A5414]/45 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#523020] leading-relaxed">
         <strong>ไม่มีการเก็บข้อมูลส่วนบุคคล และจะไม่เก็บความลับ คำถาม หรือปัญหาที่ผู้ใช้ฝากไว้โดยเด็ดขาด</strong>
       </div>
 
       <div class="pt-1">
-        <button onclick="acceptAnalyticsConsent()"
+        <button id="btn-accept-consent" onclick="acceptAnalyticsConsent()"
                 class="btn-vintage-primary w-full px-6 py-2.5 rounded-md text-xs sm:text-sm font-fahkwang min-h-[42px]">
           ✦ ยินยอมและเข้าสู่หน้าทำนาย
         </button>
@@ -540,14 +550,22 @@
   </div>
 
   <!-- RITUAL FOCUS MODAL (แสดงคำแนะนำการเพ่งจิตตามคู่มือ เช่น Romance Reading) -->
-  <div id="ritual-focus-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#2A160E]/60 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="ritual-focus-title">
+  <div id="ritual-focus-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#2A160E]/60 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="ritual-focus-title" onclick="handleRitualFocusBackdropClick(event)">
     <div class="vintage-frame modal-fade-in relative w-full max-w-md rounded-xl p-5 sm:p-6 shadow-2xl text-center space-y-3.5">
-      <div class="flex items-center justify-center gap-2 text-[#8A5414]">
-        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
-        <span class="font-cinzel text-[10px] sm:text-xs tracking-[0.18em] uppercase text-[#4F2031]">
+      <button type="button"
+              onclick="dismissRitualFocusModal()"
+              class="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-full text-[#6D3B16] hover:text-[#2A160E] hover:bg-[#8A5414]/15 transition-colors text-base leading-none"
+              title="กลับไปหน้าเดิม"
+              aria-label="ปิดและกลับไปหน้าเดิม">
+        ✕
+      </button>
+
+      <div class="flex items-center justify-center gap-2 px-5 text-[#8A5414]">
+        <span class="h-[1px] w-6 sm:w-8 bg-[#8A5414]/65 shrink-0"></span>
+        <span class="font-cinzel text-[9.5px] sm:text-xs tracking-[0.12em] sm:tracking-[0.18em] uppercase text-[#4F2031] whitespace-nowrap">
           ✦ Clow Guidebook Ritual ✦
         </span>
-        <span class="h-[1px] w-8 bg-[#8A5414]/65"></span>
+        <span class="h-[1px] w-6 sm:w-8 bg-[#8A5414]/65 shrink-0"></span>
       </div>
 
       <h3 id="ritual-focus-title" class="font-charm text-xl sm:text-2xl text-[#2A160E] leading-snug">
@@ -559,7 +577,7 @@
       <div id="ritual-focus-tip" class="hidden bg-[#FCF4DC] border border-[#8F5B6E]/55 rounded-lg px-3.5 py-2.5 text-xs font-pridi text-[#4F2031] leading-relaxed"></div>
 
       <div class="pt-1">
-        <button onclick="closeRitualFocusModal()"
+        <button id="btn-confirm-ritual-focus" onclick="closeRitualFocusModal()"
                 class="btn-vintage-primary w-full sm:w-auto px-6 py-2 rounded-md text-xs sm:text-sm font-fahkwang min-h-[40px]">
           ✦ เข้าใจแล้ว · เริ่มตั้งจิต
         </button>
@@ -587,8 +605,8 @@
       </p>
 
       <div class="bg-[#FFF4D6] border-2 border-[#D97706] rounded-lg px-3.5 py-2.5 text-[12px] sm:text-[13px] font-pridi text-[#7C2D12] leading-relaxed">
-        <strong class="block text-[13px] sm:text-[14px] font-fahkwang text-[#C2410C] mb-0.5 whitespace-nowrap">⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้</strong>
-        เมื่อแตะเลือกไพ่แล้ว หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น
+        <strong id="draw-notice-warn-title" class="block text-[13px] sm:text-[14px] font-fahkwang text-[#C2410C] mb-0.5 leading-snug">⚠ เลือกแล้วไม่สามารถเปลี่ยนใบใหม่ได้</strong>
+        <span id="draw-notice-warn-body">เมื่อแตะเลือกไพ่แล้ว หากต้องการเปลี่ยนจะต้องกดเริ่มสับไพ่ใหม่ตั้งแต่ต้น</span>
       </div>
 
       <div class="pt-1">
@@ -602,8 +620,8 @@
   </div>
 
   <!-- READING MODAL -->
-  <div id="reading-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
-    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[90dvh] sm:max-h-[88dvh] overflow-y-auto rounded-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
+  <div id="reading-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(4.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-20 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
+    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] sm:max-h-[calc(100dvh-6.5rem)] overflow-y-auto rounded-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
       <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-1.5 mb-1.5 bg-[#FBF1D4]/98 border-b border-[#8A5414]/45 flex items-center justify-between gap-2 backdrop-blur-[2px]">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[#8A5414] shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
@@ -649,12 +667,12 @@
   <!-- FOOTER -->
   <footer class="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-2.5 pb-4 sm:pb-5 relative z-10">
     <div class="py-5 px-8 sm:px-12 bg-[radial-gradient(closest-side_at_center,rgba(232,205,144,0.92)_0%,rgba(232,205,144,0.68)_58%,rgba(232,205,144,0)_100%)] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-xs text-[#523020] font-pridi">
-      <p>✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)</p>
+      <p id="footer-fanmade-note">✦ โปรเจกต์ Fanmade อ้างอิงคำทำนายจากคู่มือไพ่โคลว์การ์ดต้นฉบับ (มีระบบ AI ช่วยสรุปบทความเฉพาะบุคคล)</p>
       <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-3">
         <a id="footer-feedback-link" href="mailto:clowcardreader.dev@gmail.com?subject=THE%20CLOW%20Feedback" class="text-[#4F2031] hover:underline font-fahkwang inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 leading-snug">
           <span class="inline-flex items-center gap-1 whitespace-nowrap">
             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-            <span>ส่งข้อเสนอแนะ</span>
+            <span id="footer-feedback-label">ส่งข้อเสนอแนะ</span>
           </span>
           <span class="text-[11px] opacity-85 whitespace-nowrap">(clowcardreader.dev@gmail.com)</span>
         </a>
@@ -663,6 +681,6 @@
     </div>
   </footer>
 
-  <script type="module" src="./js/app.js?v=20261123"></script>
+  <script type="module" src="./js/app.js?v=20261124r"></script>
 </body>
 </html>

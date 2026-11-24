@@ -462,6 +462,9 @@ body {
   box-shadow: 0 4px 10px rgba(42, 22, 14, 0.35);
   pointer-events: none;
 }
+html[lang="en"] .draw-row-card.is-armed::after {
+  content: "Tap again to pick";
+}
 @keyframes pickFadeOut {
   0% {
     opacity: 1;
@@ -583,9 +586,12 @@ body {
   opacity: 0.85;
 }
 
-/* ให้แถบหัวเว็บ (THE CLOW + เพลง) อยู่เหนือป็อปอัปคำทำนาย */
+/* ให้แถบหัวเว็บ (THE CLOW + เพลง) อยู่เหนือป็อปอัปคำทำนายแบบกะทัดรัด ไม่บังปุ่มปิด */
 body.reading-modal-open #main-header {
   z-index: 60;
+}
+body.reading-modal-open #header-spread-pills {
+  display: none !important;
 }
 
 .center-oracle-stage {

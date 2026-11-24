@@ -6,7 +6,7 @@
  * - มี Graceful Fallback หากโควต้า AI ฟรีของวันเต็ม เว็บจะไม่พังและยังอ่านตำราต้นฉบับได้ครบถ้วน
  */
 
-import { getCurrentLang, getSpreadName, getPosTitle, getPosMeaning } from './i18n.js';
+import { getCurrentLang, getSpreadName, getPosTitle, getPosMeaning } from './i18n.js?v=20261124r';
 import { DAILY_READINGS } from '../data/daily-readings.js';
 import { ROMANCE_READINGS } from '../data/romance-readings.js';
 import { ROMANCE_READINGS_DETAIL } from '../data/romance-readings-detail.js';
@@ -454,6 +454,35 @@ export async function requestAiInterpretation({ spread, question, drawnCards, la
       readingCache.set(cacheKey, curatedDaily);
       return curatedDaily;
     }
+  }
+
+  // Daily Reading (English, no question): dynamically load English curated daily DB (52 cards)
+  if (spread && spread.spread_id === 'daily_single' && lang === 'en' && !cleanQuestion && drawnCards.length === 1) {
+    try {
+      const mod = await import('../data/en/daily-readings.js');
+      const entry = mod?.DAILY_READINGS_EN?.[drawnCards[0].card.id];
+      if (entry) {
+        const pos = spread.positions[0];
+        const curatedDailyEn = {
+          mode: 'curated',
+          provider: 'Clow Card Daily Guidebook (EN)',
+          overview: entry.overview,
+          connections: [
+            {
+              positionIndex: 1,
+              positionTitle: getPosTitle(spread.spread_id, pos) || 'Message for Today',
+              cardName: drawnCards[0].card.name,
+              insight: entry.overview,
+              detailInsight: entry.overview
+            }
+          ],
+          advice: [entry.advice],
+          closing: entry.closing
+        };
+        readingCache.set(cacheKey, curatedDailyEn);
+        return curatedDailyEn;
+      }
+    } catch (_) {}
   }
 
   // โหมดทำนายความรักและชีวิตคู่ (ภาษาไทย ไม่ฝากคำถาม): ดึงจากฐานข้อมูลคำทำนายความรัก 364 ตำแหน่งโดยตรง (0ms ไม่เปลืองโควต้า AI)

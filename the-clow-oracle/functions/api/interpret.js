@@ -12,6 +12,10 @@
 
 import { CARDS_DATA } from '../../public/data/cards.js';
 import { SPREADS_DATA } from '../../public/data/spreads.js';
+import { DAILY_READINGS } from '../../public/data/daily-readings.js';
+import { DAILY_READINGS_EN } from '../../public/data/en/daily-readings.js';
+import { ROMANCE_READINGS_DETAIL } from '../../public/data/romance-readings-detail.js';
+import { GENERAL_READINGS_DETAIL } from '../../public/data/general-readings-detail.js';
 
 const CARD_BY_ID = new Map(CARDS_DATA.map((c) => [c.id, c]));
 const SPREAD_BY_ID = new Map(SPREADS_DATA.map((s) => [s.spread_id, s]));
@@ -19,7 +23,7 @@ const SPREAD_BY_ID = new Map(SPREADS_DATA.map((s) => [s.spread_id, s]));
 // In-memory edge rate limit ต่อ isolate (ช่วยลดสแปมฟรีโดยไม่ต้องเสียค่า KV)
 const ipHits = new Map();
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX_REQ = 6;
+const RATE_LIMIT_MAX_REQ = 12;
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -49,42 +53,67 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+function getCuratedPositionReading(spreadId, card, posIndex, lang = 'th') {
+  if (spreadId === 'daily_single') {
+    const entry = lang === 'en' ? DAILY_READINGS_EN[card.id] : DAILY_READINGS[card.id];
+    if (entry) {
+      return {
+        reading: entry.overview || card.meaning,
+        advice: entry.advice || card.warning
+      };
+    }
+  } else if (spreadId === 'love_cross') {
+    const posText = ROMANCE_READINGS_DETAIL[card.id]?.[posIndex];
+    if (posText) {
+      return { reading: posText, advice: card.warning };
+    }
+  } else if (spreadId === 'general_six') {
+    const posText = GENERAL_READINGS_DETAIL[card.id]?.[posIndex];
+    if (posText) {
+      return { reading: posText, advice: card.warning };
+    }
+  }
+  return { reading: card.meaning, advice: card.warning };
+}
+
 function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
   const cardsText = resolvedCards
-    .map(
-      ({ pos, card }) =>
+    .map(({ pos, card }) => {
+      const curated = getCuratedPositionReading(spread.spread_id, card, pos.index, lang);
+      return (
         `ตำแหน่งที่ ${pos.index}: ${pos.title} (${pos.meaning})\n` +
         `- ไพ่ที่ได้: ${card.name} (${card.thaiName}) [${card.elementThai}]\n` +
-        `- คีย์เวิร์ด: ${card.keywords.join(', ')}\n` +
-        `- ความหมายตามคู่มือ: ${card.meaning}\n` +
-        `- ข้อควรระวังตามคู่มือ: ${card.warning}`
-    )
+        `- คำทำนายต้นฉบับประจำตำแหน่งนี้ (ผ่านการเกลาตามคัมภีร์แล้ว): ${curated.reading}\n` +
+        `- ข้อควรระวังตามคู่มือ: ${curated.advice}`
+      );
+    })
     .join('\n\n');
 
   if (lang === 'en') {
     const qBlockEn = question
-      ? `User's question/context:\n"""${question}"""`
+      ? `=== USER'S QUESTION / REAL-LIFE CONTEXT ===\n"""${question}"""`
       : 'The user did not type a question (kept it in mind). Interpret the card spread cohesively.';
     return (
-      `You are the warm, thoughtful keeper of "THE CLOW" Clow Card Oracle.\n` +
-      `Rules:\n` +
-      `1. Stay faithful to the guidebook card meanings and warnings below.\n` +
-      `2. Directly weave the user's question/context into every section (overview, per-position insight, advice).\n` +
-      `3. Respond ONLY with valid JSON matching this exact schema in natural, clear English:\n` +
+      `You are the warm, graceful keeper and skilled literary translator of "THE CLOW" Clow Card Oracle.\n` +
+      `Language & Tone Rules:\n` +
+      `1. Write in clear, accessible everyday English (CEFR A2–B1+ level) that still feels warm, comforting, and gracefully poetic. Avoid archaic words, stiff academic jargon, or overly difficult vocabulary.\n` +
+      `2. Use the curated position-specific reading below as your faithful core meaning for each card.\n` +
+      `3. First identify the user's real goal, worry, or decision from their question, then directly weave those concrete details into the overview, every relevant position insight, and advice.\n` +
+      `4. Respond ONLY with valid JSON matching this exact schema:\n` +
       `{\n` +
-      `  "overview": "Concise sequential summary of all drawn cards (3-5 sentences)",\n` +
+      `  "overview": "Direct, compassionate answer to the user's specific question synthesized from all drawn cards (3-4 clear, graceful sentences)",\n` +
       `  "connections": [\n` +
-      `    { "positionIndex": 1, "positionTitle": "Position Title", "cardName": "CARD NAME", "insight": "Direct 2-3 sentence reading tailored to this position and user's context" }\n` +
+      `    { "positionIndex": 1, "positionTitle": "Position Title in English", "cardName": "CARD NAME", "insight": "Adapt the curated position reading directly to the user's specific situation (2-3 concise, warm sentences)" }\n` +
       `  ],\n` +
-      `  "advice": ["1-2 concise warning sentences summarizing the key cautions across the cards"],\n` +
-      `  "closing": "1 warm encouraging closing sentence"\n` +
+      `  "advice": ["1-2 concise, practical caution/guidance sentences tailored to the user's question"],\n` +
+      `  "closing": "1 warm, encouraging closing sentence in graceful everyday English"\n` +
       `}\n\n` +
-      `Spread: ${spread.engTitle}\n${qBlockEn}\n\nGuidebook Card Data:\n${cardsText}`
+      `Spread: ${spread.engTitle}\n${qBlockEn}\n\nCurated Position Readings:\n${cardsText}`
     );
   }
 
   const userQuestionBlock = question
-    ? `ปัญหา/คำถามที่ผู้ใช้เล่ามา:\n"""${question}"""`
+    ? `=== คำถาม/สถานการณ์จริงที่ผู้ใช้เล่ามา ===\n"""${question}"""`
     : 'ผู้ใช้ไม่ได้ระบุคำถามเป็นข้อความ (อธิษฐานในใจ) ให้ตีความเชื่อมโยงภาพรวมของหน้าไพ่ให้สอดคล้องกันอย่างลึกซึ้ง';
 
   let spreadGuide = '';
@@ -99,28 +128,29 @@ function buildOraclePrompt({ spread, question, resolvedCards, lang = 'th' }) {
   return (
     `คุณคือ "บรรณาธิการและผู้ดูแลคัมภีร์พยากรณ์ไพ่โคลว์การ์ด (THE CLOW)" ที่ถ่ายทอดภาษาไทยได้ละมุนหู สุขุม อ่อนโยน และซื่อสัตย์ต่อคู่มือไพ่โคลว์การ์ดต้นฉบับ\n` +
     `กติกาสำคัญ:\n` +
-    `1. ยึดความหมายหลักและข้อควรระวังจากคู่มือที่ให้ไว้ด้านล่างเป็นแกนหลัก ห้ามแต่งความหมายไพ่ขัดแย้งกับคู่มือ\n` +
-    `2. ต้องตอบให้เชื่อมโยงกับ "ปัญหา/คำถามที่ผู้ใช้เล่ามา" อย่างเป็นธรรมชาติ โดยรู้จักชั่งน้ำหนักความเกี่ยวข้องของไพ่แต่ละใบ: ใบที่ความหมายตรงกับประเด็นปัญหาให้เจาะลึกผูกกับบริบทจริงของผู้ใช้เต็มที่ ส่วนใบที่สื่อพลังเสริมหรือมุมมองกว้างๆ ให้เชื่อมโยงอย่างนุ่มนวลโดยไม่ฝืนยัดเยียด หากผู้ใช้เล่าเรื่องยาวหรือถามซ้อนหลายประเด็น ให้จับแก่นคำถามหลักทั้งหมดออกมาตอบให้ครบถ้วน\n` +
-    `3. ใน "overview" ต้องเล่าเรื่องตามลำดับของไพ่ทีละใบอย่างกระชับและเข้าใจง่าย ว่าไพ่แต่ละใบบอกอะไรกับผู้ถามตั้งแต่ใบแรกจนถึงใบสุดท้าย โดยไม่ต้องเน้นชื่อไพ่หรือศัพท์ตำแหน่งที่ทำให้ผู้อ่านสับสน\n` +
-    `4. ใช้ภาษาไทยสละสลวย ละมุนหู เป็นกลางและเป็นธรรมชาติ **ห้ามลงท้ายด้วยคำว่า "ครับ" หรือ "ค่ะ"** ในข้อความคำทำนายทุกส่วน **ห้ามใช้เครื่องหมายคอมม่า (,) ในประโยคภาษาไทย** และไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
-    `5. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
+    `1. ยึด "คำทำนายต้นฉบับประจำตำแหน่งนี้" ที่ให้ไว้ด้านล่างเป็นแกนความหมายหลักของไพ่แต่ละใบ ห้ามแต่งความหมายขัดแย้งกับต้นฉบับ และคงความละมุนสละสลวยในโทนเดียวกัน\n` +
+    `2. หน้าที่หลักของคุณคือ "นำคำทำนายต้นฉบับประจำตำแหน่งมาผูกและต่อยอดให้ตรงกับคำถาม/สถานการณ์จริงที่ผู้ใช้เล่ามา" ให้แกะประเด็นสำคัญจากคำถามก่อนว่าผู้ใช้กำลังเผชิญเรื่องอะไร มีเป้าหมายหรือความกังวลเรื่องไหน หรือกำลังชั่งใจทางเลือกใด แล้วเอ่ยถึงบริบทจริงนั้นอย่างเป็นธรรมชาติและเฉพาะเจาะจงในทุกตำแหน่งที่เกี่ยวข้อง ห้ามคัดลอกต้นฉบับแบบกว้างๆ โดยไม่พูดถึงเรื่องที่ผู้ใช้ถาม\n` +
+    `3. ชั่งน้ำหนักความเกี่ยวข้องอย่างเป็นธรรมชาติ: ตำแหน่งหลักที่ตรงกับปัญหาให้เจาะลึกผูกกับเรื่องที่ผู้ใช้ถามอย่างชัดเจน ส่วนตำแหน่งที่เป็นมุมมองกว้างหรือบรรยากาศแวดล้อมให้เชื่อมโยงอย่างนุ่มนวลไม่ฝืนยัดเยียด หากผู้ใช้ถามหลายประเด็นให้ตอบให้ครบถ้วน\n` +
+    `4. ใน "overview" ให้เขียนเป็น "บทสรุปคำตอบที่ตรงประเด็นสำหรับคำถามของผู้ใช้" (3-4 ประโยค) สังเคราะห์จากหน้าไพ่ทั้งหมดว่าเรื่องที่ผู้ใช้ถามมีแนวโน้มเป็นอย่างไร จุดชี้ขาดคืออะไร และควรวางใจหรือตัดสินใจอย่างไร\n` +
+    `5. ใช้ภาษาไทยสละสลวย ละมุนหู เป็นกลางและเป็นธรรมชาติ **ห้ามลงท้ายด้วยคำว่า "ครับ" หรือ "ค่ะ"** ในข้อความคำทำนายทุกส่วน **ห้ามใช้เครื่องหมายคอมม่า (,) ในประโยคภาษาไทย** และไม่ฟันธงเรื่องร้ายแรงหรือทำนายสุขภาพ/การแพทย์/กฎหมาย\n` +
+    `6. ตอบกลับมาเป็น JSON เท่านั้น ตามโครงสร้างนี้เป๊ะๆ ห้ามมีข้อความอื่นนอก JSON:\n` +
     `{\n` +
-    `  "overview": "เล่าสรุปตามลำดับของไพ่ทีละใบอย่างกระชับว่าไพ่แต่ละใบบอกอะไรกับปัญหาของผู้ใช้โดยตรง (3-5 ประโยค)",\n` +
+    `  "overview": "บทสรุปคำตอบที่ตรงประเด็นสำหรับคำถามหรือสถานการณ์จริงของผู้ใช้ โดยสังเคราะห์จากไพ่ทั้งหมด (3-4 ประโยค ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)",\n` +
     `  "connections": [\n` +
     `    {\n` +
     `      "positionIndex": 1,\n` +
     `      "positionTitle": "ชื่อตำแหน่ง",\n` +
     `      "cardName": "ชื่อไพ่ (ชื่อไทย)",\n` +
-    `      "insight": "อธิบายตรงๆ ว่าไพ่ใบนี้บอกอะไรกับผู้ถามและสถานการณ์ในตำแหน่งนี้ (2-3 ประโยคกระชับ ไม่ต้องย้ำชื่อไพ่ ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)"\n` +
+    `      "insight": "นำคำทำนายต้นฉบับประจำตำแหน่งนี้มาเรียบเรียงและผูกเข้ากับปัญหาหรือคำถามจริงของผู้ใช้โดยตรง (2-3 ประโยคกระชับ ไม่ต้องย้ำชื่อไพ่ ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)"\n` +
     `    }\n` +
     `  ],\n` +
-    `  "advice": ["สรุปคำเตือนหรือคำแนะนำที่สำคัญที่สุดให้สั้นและกระชับ เพียง 1-2 ประโยคสั้นๆ (ไม่ต้องใส่คำนำหน้าว่า ไพ่เหล่านี้ต้องการเตือนคุณว่า ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)"],\n` +
+    `  "advice": ["สรุปข้อควรระวังและคำแนะนำที่สำคัญที่สุดให้ตรงกับคำถามของผู้ใช้ เพียง 1-2 ประโยคสั้นๆ (ไม่ต้องใส่คำนำหน้าว่า ไพ่เหล่านี้ต้องการเตือนคุณว่า ห้ามใช้คอมม่า และห้ามลงท้ายด้วยครับหรือค่ะ)"],\n` +
     `  "closing": "ข้อความให้กำลังใจสั้นๆ 1 ประโยคสไตล์คัมภีร์โคลว์"\n` +
     `}\n\n` +
     `ผังการเปิดไพ่: ${spread.name} (${spread.engTitle})\n` +
     `${spreadGuide}` +
     `${userQuestionBlock}\n\n` +
-    `ข้อมูลไพ่จากคู่มือต้นฉบับ:\n${cardsText}`
+    `ฐานข้อมูลคำทำนายต้นฉบับประจำตำแหน่ง:\n${cardsText}`
   );
 }
 
@@ -208,7 +238,7 @@ export async function onRequestPost(context) {
       {
         code: 'RATE_LIMITED',
         message:
-          'คุณใช้สิทธิ์ตีความด้วย AI ครบตามโควต้าช่วงเวลานี้แล้ว โปรดรอสักครู่ (ประมาณ 10 นาที) หรืออ่านคำทำนายจากตำราต้นฉบับด้านล่างได้ทันทีครับ'
+          'คุณใช้สิทธิ์ตีความด้วย AI ครบตามโควต้าช่วงเวลานี้แล้ว โปรดรอสักครู่ (ประมาณ 10 นาที) หรืออ่านคำทำนายจากตำราต้นฉบับด้านล่างได้ทันที'
       },
       429
     );
@@ -277,7 +307,9 @@ export async function onRequestPost(context) {
       {
         code: 'QUOTA_EXCEEDED',
         message:
-          'พลังเวทของ AI ฟรีในชั่วโมงนี้มีผู้ใช้งานหนาแน่นเกินโควต้า คุณยังสามารถอ่านคำทำนายจากตำราโคลว์การ์ดต้นฉบับด้านล่างได้ครบถ้วนครับ'
+          lang === 'en'
+            ? 'Our free AI reading quota is busy right now. You can still read your full guidebook message below.'
+            : 'พลังเวทของ AI ฟรีในชั่วโมงนี้มีผู้ใช้งานหนาแน่นเกินโควต้า คุณยังสามารถอ่านคำทำนายจากตำราโคลว์การ์ดต้นฉบับด้านล่างได้ครบถ้วน'
       },
       429
     );
@@ -286,7 +318,10 @@ export async function onRequestPost(context) {
   return jsonResponse(
     {
       code: 'AI_UNAVAILABLE',
-      message: 'ห้องพยากรณ์ AI ไม่พร้อมใช้งานชั่วคราว กรุณาอ่านคำทำนายจากตำราต้นฉบับด้านล่างแทนครับ'
+      message:
+        lang === 'en'
+          ? 'The AI reader is taking a brief rest. You can read your complete guidebook interpretation below.'
+          : 'ห้องพยากรณ์ AI ไม่พร้อมใช้งานชั่วคราว สามารถอ่านคำทำนายจากตำราต้นฉบับด้านล่างได้ทันที'
     },
     502
   );
