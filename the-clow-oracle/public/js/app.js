@@ -2366,12 +2366,8 @@ function openSingleCardModal(posIndex) {
         </div>
 
         ${
-          !isEn
-            ? `
-        <div class="bg-[#8F5B6E]/15 border-l-4 border-[#4F2031] rounded-r-md px-4 py-3">
-          <h4 class="font-fahkwang text-xs text-[#4F2031]">${escapeHtml(t('singleCardWarningHeader'))}</h4>
-          <p class="font-pridi text-xs sm:text-sm text-[#2A160E] mt-1 leading-relaxed">${card.warning}</p>
-        </div>`
+          activeSpread && activeSpread.spread_id === 'daily_single'
+            ? `<div id="single-card-guidance-box" class="hidden bg-[#8F5B6E]/15 border-l-4 border-[#4F2031] rounded-r-md px-4 py-3"></div>`
             : ''
         }
       </div>
@@ -2480,6 +2476,23 @@ async function loadSingleCardAiInsight(posIndex) {
     </div>
     <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanInsight)}</p>
   `;
+
+  const guidanceBox = document.getElementById('single-card-guidance-box');
+  if (guidanceBox) {
+    const rawAdvice = Array.isArray(result.advice)
+      ? result.advice.map((l) => String(l || '').trim()).filter(Boolean).join(' ')
+      : String(result.advice || '').trim();
+    const cleanAdvice = isEnPos ? rawAdvice : rawAdvice.replace(/^ไพ่เหล่านี้ต้องการเตือนคุณว่า\s*/, '').replace(/,/g, '').trim();
+    if (cleanAdvice) {
+      guidanceBox.innerHTML = `
+        <h4 class="font-fahkwang text-xs text-[#4F2031]">${escapeHtml(t('singleCardWarningHeader'))}</h4>
+        <p class="font-pridi text-xs sm:text-sm text-[#2A160E] mt-1 leading-relaxed">${escapeHtml(cleanAdvice)}</p>
+      `;
+      guidanceBox.classList.remove('hidden');
+    } else {
+      guidanceBox.classList.add('hidden');
+    }
+  }
 }
 
 function openFullReadingModal() {
@@ -2491,7 +2504,6 @@ function openFullReadingModal() {
 
   if (isDaily) {
     const card = sortedSlots[0].card;
-    const isEnDaily = getCurrentLang() === 'en';
     body.innerHTML = `
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pt-1">
@@ -2501,7 +2513,6 @@ function openFullReadingModal() {
             </div>
             <div class="text-center space-y-0.5">
               <span class="font-cinzel text-sm sm:text-base font-bold text-[#2A160E] tracking-wider block">${card.name}</span>
-              ${!isEnDaily ? `<h3 class="font-charm text-lg sm:text-xl text-[#4F2031]">${card.thaiName}</h3>` : ''}
             </div>
           </div>
 
