@@ -6,7 +6,7 @@
  */
 
 import { BGM_TRACKS } from '../data/bgm.js?v=20261124e';
-import { getCurrentLang, t } from './i18n.js?v=20261124r';
+import { getCurrentLang, t } from './i18n.js?v=20261124u';
 
 let audioCtx = null;
 const isSoundOn = true;

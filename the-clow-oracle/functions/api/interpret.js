@@ -173,6 +173,60 @@ function safeParseJson(rawText) {
   return null;
 }
 
+let cachedDiscoveredModels = null;
+let cachedDiscoveredAt = 0;
+const MODEL_CACHE_TTL_MS = 60 * 60 * 1000;
+
+async function discoverActiveFlashModels(apiKey) {
+  const now = Date.now();
+  if (cachedDiscoveredModels && now - cachedDiscoveredAt < MODEL_CACHE_TTL_MS) {
+    return cachedDiscoveredModels;
+  }
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const models = Array.isArray(data?.models) ? data.models : [];
+    const usable = models
+      .filter(
+        (m) =>
+          Array.isArray(m.supportedGenerationMethods) &&
+          m.supportedGenerationMethods.includes('generateContent') &&
+          typeof m.name === 'string' &&
+          /gemini/i.test(m.name) &&
+          !/embedding|imagen|veo|tts|audio|live|aqa/i.test(m.name)
+      )
+      .map((m) => m.name.replace(/^models\//, ''));
+
+    // จัดลำดับความสำคัญ: Flash รุ่นใหม่สุดก่อน แล้วค่อย Flash-Lite และรุ่นอื่น
+    usable.sort((a, b) => {
+      const score = (id) => {
+        let s = 0;
+        if (/flash/i.test(id)) s += 100;
+        if (/lite/i.test(id)) s -= 10;
+        if (/latest/i.test(id)) s += 20;
+        if (/exp|preview/i.test(id)) s -= 5;
+        const ver = id.match(/gemini-(\d+(?:\.\d+)?)/i);
+        if (ver) s += parseFloat(ver[1]) * 10;
+        return s;
+      };
+      return score(b) - score(a);
+    });
+
+    const top = usable.slice(0, 4);
+    if (top.length > 0) {
+      cachedDiscoveredModels = top;
+      cachedDiscoveredAt = now;
+    }
+    return top;
+  } catch (_) {
+    return [];
+  }
+}
+
 async function callGemini(apiKey, model, prompt) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const generationConfig = {
@@ -180,9 +234,6 @@ async function callGemini(apiKey, model, prompt) {
     maxOutputTokens: 6144,
     responseMimeType: 'application/json'
   };
-  if (model.startsWith('gemini-2.5-')) {
-    generationConfig.thinkingConfig = { thinkingBudget: 0 };
-  }
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -301,7 +352,17 @@ export async function onRequestPost(context) {
   const errors = [];
 
   if (geminiKey) {
-    for (const model of ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']) {
+    const discovered = await discoverActiveFlashModels(geminiKey);
+    const candidates = Array.from(
+      new Set([
+        ...discovered,
+        'gemini-flash-latest',
+        'gemini-flash-lite-latest',
+        'gemini-3-flash-preview'
+      ])
+    ).slice(0, 4);
+
+    for (const model of candidates) {
       const attempt = await callGemini(geminiKey, model, prompt);
       if (attempt.reading) return jsonResponse(attempt, 200);
       if (attempt.quotaExceeded) sawQuota = true;

@@ -3,7 +3,7 @@
  * คงดีไซน์ แอนิเมชัน และพิธีกรรมเปิดไพ่ครบถ้วน + เพิ่มระบบ AI ตีความเชื่อมโยงกับปัญหาผู้ใช้
  */
 
-import { SPREADS_DATA } from '../data/spreads.js';
+import { SPREADS_DATA } from '../data/spreads.js?v=20261124u';
 import { CARDS_DATA } from '../data/cards.js';
 import { COMPATIBILITY_READINGS } from '../data/compatibility-readings.js';
 import { getCardBackUrl, getCardFrontUrl, getMagicCircleUrl } from '../data/assets.config.js';
@@ -17,8 +17,8 @@ import {
   playSoftPaperRustle,
   playCardFlipSound,
   playRapidRiffleSound
-} from './audio.js?v=20261124s';
-import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124r';
+} from './audio.js?v=20261124u';
+import { requestAiInterpretation, clearAiReadingCache, buildLocalGuidebookSynthesis } from './ai-oracle.js?v=20261124u';
 import { trackEvent, hasAnalyticsConsent, grantAnalyticsConsent } from './analytics.js';
 import {
   applyLanguage,
@@ -32,7 +32,7 @@ import {
   getSpreadPlaceholder,
   getPosTitle,
   getPosMeaning
-} from './i18n.js?v=20261124r';
+} from './i18n.js?v=20261124u';
 
 /**
  * =========================================================================
@@ -451,7 +451,7 @@ function updateQuestionAiStatusNote() {
       const mins = Math.max(1, Math.ceil(remainMs / 60000));
       const isEn = getCurrentLang() === 'en';
       noteEl.innerHTML = isEn
-        ? `✦ Our free AI reader quota is resting for about <strong>${mins} min</strong> — you can still draw cards and enjoy your full <strong>Clow Guidebook</strong> reading.`
+        ? `✦ Our free AI reader quota is resting for about <strong>${mins} min</strong> — you can still draw cards and enjoy your full <strong>Clow Oracle</strong> reading.`
         : `✦ ขณะนี้โควตาผู้ช่วยตีความเต็มชั่วคราว (ใช้งานได้อีกครั้งในอีกประมาณ <strong>${mins} นาที</strong>) — ยังสามารถเปิดไพ่และรับคำทำนายจาก <strong>ตำราไพ่โคลว์</strong> ได้ตามปกติ`;
       noteEl.classList.remove('hidden');
       return;
@@ -1594,6 +1594,15 @@ function pickCardFromDeck(deckIdx) {
     const deckPanel = document.getElementById('deck-stage-panel');
     deckPanel.classList.add('hidden');
 
+    // เริ่มประมวลผล AI ล่วงหน้าทันทีที่วางไพ่ครบ (ใช้โควต้าเพียง 1 ครั้ง และแชร์ผลตั้งแต่เปิดไพ่ใบแรกจนถึงบทสรุป)
+    if ((userSecretQuestion && userSecretQuestion.trim()) || getCurrentLang() === 'en') {
+      requestAiInterpretation({
+        spread: activeSpread,
+        question: userSecretQuestion,
+        drawnCards: placedSlots
+      }).catch(() => {});
+    }
+
     triggerPageFade(boardArea);
     scrollToTopSmooth();
   }
@@ -1697,7 +1706,7 @@ function updateTableProgress() {
       : 'อัญเชิญไพ่ครบตามผังแล้ว';
     document.getElementById('deck-instruction-sub').textContent = isEn
       ? 'Tap each card on the board in numbered order to reveal its message.'
-      : 'แตะเปิดไพ่บนแท่นตามลำดับหมายเลขในคู่มือ';
+      : 'แตะเปิดไพ่บนแท่นตามลำดับหมายเลข';
 
     const unrevealed = placedSlots.filter((s) => !s.isRevealed);
     if (unrevealed.length > 0) {
@@ -1706,7 +1715,7 @@ function updateTableProgress() {
       const posTitle = posMeta ? getPosTitle(activeSpread.spread_id, posMeta) : '';
       boardHint.textContent = isEn
         ? `Next to reveal: ${posMeta ? `${posMeta.index}. ${posTitle}` : ''}`
-        : `ลำดับการเปิดตามคู่มือ: ${posMeta ? `${posMeta.index}. ${posTitle}` : ''}`;
+        : `ลำดับการเปิดไพ่: ${posMeta ? `${posMeta.index}. ${posTitle}` : ''}`;
       guideText.innerHTML = '';
       guideText.classList.add('hidden');
       if (guideText.parentElement) guideText.parentElement.classList.add('hidden');
@@ -2431,8 +2440,20 @@ async function loadSingleCardAiInsight(posIndex) {
   const box = document.getElementById('single-card-ai-box');
   if (!box) return;
 
-  // รายใบใช้ระบบจับคู่ตำแหน่ง + คำถามจากคัมภีร์ในเครื่องทันที (ไม่เปลืองโควต้า AI — เก็บ AI ไว้ใช้ครั้งเดียวตอนหน้าบทสรุป)
-  const result = buildLocalGuidebookSynthesis(activeSpread, userSecretQuestion, placedSlots);
+  const isEnPos = getCurrentLang() === 'en';
+  const hasQuestion = Boolean(userSecretQuestion && userSecretQuestion.trim());
+  const result =
+    hasQuestion || isEnPos
+      ? await requestAiInterpretation({
+          spread: activeSpread,
+          question: userSecretQuestion,
+          drawnCards: placedSlots
+        })
+      : buildLocalGuidebookSynthesis(activeSpread, userSecretQuestion, placedSlots);
+
+  // ป้องกันกรณีผู้ใช้ปิดหรือเปลี่ยนไปเปิดไพ่ใบอื่นก่อนที่ AI จะตอบกลับ
+  const liveBox = document.getElementById('single-card-ai-box');
+  if (!liveBox || liveBox !== box) return;
 
   const conn = Array.isArray(result.connections)
     ? result.connections.find((c) => Number(c.positionIndex) === Number(posIndex)) || result.connections[posIndex - 1]
@@ -2442,7 +2463,6 @@ async function loadSingleCardAiInsight(posIndex) {
     ? conn.detailInsight || conn.insight
     : result.overview;
 
-  const isEnPos = getCurrentLang() === 'en';
   const posMeta = activeSpread.positions.find((p) => Number(p.index) === Number(posIndex));
   const posTitle = posMeta ? getPosTitle(activeSpread.spread_id, posMeta) : '';
   const posMeaning = posMeta ? getPosMeaning(activeSpread.spread_id, posMeta) : '';
@@ -2454,13 +2474,14 @@ async function loadSingleCardAiInsight(posIndex) {
       ? `✦ No. ${posIndex}`
       : `✦ ลำดับที่ ${posIndex}`;
   const headerSub = posMeaning ? `<p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${escapeHtml(posMeaning)}</p>` : '';
+  const cleanInsight = isEnPos ? String(insightText || '').trim() : String(insightText || '').replace(/,/g, '').trim();
 
   box.innerHTML = `
     <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
       <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">${escapeHtml(headerTitle)}</span>
       ${headerSub}
     </div>
-    <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(insightText || '')}</p>
+    <p class="font-pridi text-xs sm:text-sm text-[#2A160E] leading-relaxed">${escapeHtml(cleanInsight)}</p>
   `;
 }
 

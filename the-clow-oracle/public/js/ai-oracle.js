@@ -6,7 +6,7 @@
  * - มี Graceful Fallback หากโควต้า AI ฟรีของวันเต็ม เว็บจะไม่พังและยังอ่านตำราต้นฉบับได้ครบถ้วน
  */
 
-import { getCurrentLang, getSpreadName, getPosTitle, getPosMeaning } from './i18n.js?v=20261124r';
+import { getCurrentLang, getSpreadName, getPosTitle, getPosMeaning } from './i18n.js?v=20261124u';
 import { DAILY_READINGS } from '../data/daily-readings.js';
 import { ROMANCE_READINGS } from '../data/romance-readings.js';
 import { ROMANCE_READINGS_DETAIL } from '../data/romance-readings-detail.js';

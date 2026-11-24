@@ -19,10 +19,10 @@ const SPREAD_EN = {
   love_cross: {
     name: 'Romance Reading',
     topicTags: ['Crush', 'Dating', 'Partner · Couple'],
-    purpose: 'A 7-card spread from the original guidebook showing their true nature, your past, present, future, obstacle, outcome, and advice.',
+    purpose: 'A 7-card spread showing their true nature, your past, present, future, obstacle, outcome, and advice.',
     ritualNoticeTitle: 'Set Your Intention Before Reading',
     ritualNoticeBody: 'Close your eyes for a quiet moment and <span class="text-[#9F1239]">picture the face or name of the person you love or like</span> as you shuffle, cut, and choose your cards.',
-    ritualNoticeTip: 'Guidebook tip: wearing something pink or keeping pink flowers nearby is said to brighten the gentle energy of love.',
+    ritualNoticeTip: 'Wearing something pink or keeping pink flowers nearby is said to brighten the gentle energy of love.',
     questionPlaceholder: 'Optional: tell us about your feelings, your crush, or the relationship you wish to ask about...',
     positions: {
       1: { title: 'Their True Nature', meaning: 'The personality and heart of the person you like or love' },
@@ -37,7 +37,7 @@ const SPREAD_EN = {
   general_six: {
     name: 'General Reading',
     topicTags: ['Work', 'Study', 'Finances', 'Decisions'],
-    purpose: 'A 10-card spread from the original guidebook looking closely at the heart of your matter, its cause, past, surroundings, solution, key, obstacle, future, and result.',
+    purpose: 'A 10-card spread looking closely at the heart of your matter, its cause, past, surroundings, solution, key, obstacle, future, and result.',
     questionPlaceholder: 'Optional: share a question about work, study, money, or an important choice on your mind...',
     positions: {
       1: { title: 'Heart of the Matter', meaning: 'The core theme of the situation you are asking about' },
@@ -75,7 +75,7 @@ const DICT = {
     heroTitle: 'เปิดตำราพยากรณ์ไพ่โคลว์การ์ด',
     heroSub: 'สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ',
     btnShuffleNew: '↻ สับไพ่ใหม่',
-    boardTitle: 'แท่นวางไพ่โคลว์การ์ด (เปิดตามลำดับคู่มือ)',
+    boardTitle: 'แท่นวางไพ่โคลว์การ์ด (เปิดตามลำดับ)',
     stepperQuestion: 'ฝากคำถาม (ข้ามได้)',
     stepperShuffle: 'สับไพ่',
     stepperShuffleAlt: 'สับสำรับไพ่',
@@ -172,7 +172,7 @@ const DICT = {
     privacyTitle: 'Your Privacy Comes First',
     privacyBody: 'Your question is only used for this reading and is <strong>never saved to any database or personal history</strong>.',
     fairnessNotice: '✦ <strong class="font-fahkwang text-[#4F2031]">Fair & Independent Draw:</strong> All 52 cards have an equal chance of being drawn. Your question only shapes the message after your cards are picked.',
-    aiNoteDefault: '✦ Two reading modes: <strong>Personalized AI insight</strong> and <strong>Clow Guidebook reading</strong> (switches smoothly to the guidebook if AI quota is busy).',
+    aiNoteDefault: '✦ Two reading modes: <strong>Personalized AI insight</strong> and <strong>Clow Oracle reading</strong> (switches smoothly if AI quota is busy).',
     btnSkipQuestion: 'Skip (Keep in Mind) →',
     btnSubmitQuestion: '✦ Shuffle Now',
     shuffleTitle: 'Focus & Shuffle',
@@ -227,7 +227,7 @@ const DICT = {
     summaryWarningHeader: '☽ Guiding Message from the Cards',
     btnShareSummary: '✦ Share / Save',
     modeNoteLive: '✦ Personalized reading woven for your question with AI',
-    modeNoteDemo: '✦ Clow Guidebook reading (offline preview or temporary AI fallback)',
+    modeNoteDemo: '✦ Clow Oracle reading (offline preview or temporary AI fallback)',
     bgmLabel: 'Music: ',
     bgmOn: 'On',
     bgmOff: 'Off',
