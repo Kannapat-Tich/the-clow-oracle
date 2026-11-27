@@ -26,7 +26,7 @@
   <link rel="preload" as="image" href="./assets/cards/sword.webp" />
   <link rel="preload" as="image" href="./assets/ui/clow_magic_circle.webp" />
 
-  <link rel="stylesheet" href="./styles/grimoire.css?v=20261124z13" />
+  <link rel="stylesheet" href="./styles/grimoire.css?v=20261127b" />
 </head>
 <body class="flex flex-col justify-between">
   <div class="dusty-paper-grain" aria-hidden="true"></div>
@@ -233,15 +233,15 @@
   <!-- ======================================================================= -->
   <!-- MAIN CONTENT STAGE                                                      -->
   <!-- ======================================================================= -->
-  <main class="flex-grow w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4 flex flex-col justify-start sm:justify-center relative z-10 overflow-x-clip">
+  <main class="flex-grow w-full max-w-6xl mx-auto px-3 sm:px-6 md:px-7 lg:px-8 py-2 sm:py-3 md:py-4 flex flex-col justify-start relative z-10 overflow-x-clip">
 
     <!-- STEP 1: SPREAD SELECTION + CELESTIAL ALTAR SHOWCASE -->
-    <section id="screen-select" class="w-full space-y-3 sm:space-y-4 pt-4 sm:pt-6">
+    <section id="screen-select" class="w-full space-y-3 sm:space-y-4 md:space-y-5 pt-2 sm:pt-4 md:pt-3">
       <div class="relative pt-0.5 pb-0.5 flex flex-col items-center">
-        <div id="hero-card-fan" class="relative h-52 sm:h-64 md:h-[300px] py-2 w-full max-w-3xl flex items-center justify-center select-none"></div>
+        <div id="hero-card-fan" class="relative h-52 sm:h-60 md:h-[248px] lg:h-[268px] py-1.5 w-full max-w-3xl flex items-center justify-center select-none"></div>
       </div>
 
-      <div class="max-w-2xl mx-auto text-center space-y-1 px-8 sm:px-14 py-6 bg-[radial-gradient(closest-side_at_center,rgba(243,226,179,0.92)_0%,rgba(243,226,179,0.68)_58%,rgba(243,226,179,0)_100%)]">
+      <div class="max-w-2xl mx-auto text-center space-y-1 px-6 sm:px-12 md:px-14 py-4 sm:py-5 md:py-4 bg-[radial-gradient(closest-side_at_center,rgba(243,226,179,0.92)_0%,rgba(243,226,179,0.68)_58%,rgba(243,226,179,0)_100%)]">
         <div class="flex items-center justify-center gap-2 sm:gap-3 text-[#8A5414]">
           <span class="h-[1px] w-8 sm:w-14 bg-[#8A5414]/75"></span>
           <span class="font-cinzel text-[9px] sm:text-[11px] tracking-[0.16em] sm:tracking-[0.22em] uppercase text-[#4F2031]">
@@ -250,15 +250,15 @@
           <span class="h-[1px] w-8 sm:w-14 bg-[#8A5414]/75"></span>
         </div>
 
-        <h1 class="font-charm text-2xl sm:text-3xl md:text-4xl text-[#2A160E] leading-snug">
+        <h1 class="font-charm text-2xl sm:text-3xl md:text-[2rem] lg:text-4xl text-[#2A160E] leading-snug">
           เปิดตำราพยากรณ์ไพ่โคลว์การ์ด
         </h1>
-        <p id="hero-subtitle-text" class="font-pridi text-xs sm:text-sm text-[#523020] leading-relaxed">
+        <p id="hero-subtitle-text" class="font-pridi text-xs sm:text-sm md:text-[15px] text-[#523020] leading-relaxed max-w-[54ch] mx-auto">
           สำรวมจิตให้นิ่งดั่งเปลวเทียน นึกถึงคำถามที่ปรารถนาคำตอบ แล้วเลือกผังวางไพ่ตามคัมภีร์ทั้ง 52 ใบ
         </p>
       </div>
 
-      <div id="spread-options-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"></div>
+      <div id="spread-options-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5"></div>
     </section>
 
     <!-- STEP 2 & 3: TABLETOP SHUFFLE, DRAW & 3D SPREAD BOARD -->
@@ -443,37 +443,37 @@
           </div>
 
           <!-- PHASE 1.5: CUT DECK -->
-          <div id="ritual-cut-stage" class="hidden py-3 sm:py-4 flex flex-col items-center justify-center gap-4 overflow-hidden">
+          <div id="ritual-cut-stage" class="hidden py-4 sm:py-5 md:py-6 flex flex-col items-center justify-center gap-5 overflow-hidden">
             <div class="w-full flex flex-col items-center justify-center overflow-visible py-2">
               <div id="cut-deck-touchzone"
                    onclick="performDeckCut()"
-                   class="interactive-deck-wrap relative w-24 sm:w-28 md:w-32 clow-aspect select-none overflow-visible"
+                   class="interactive-deck-wrap cut-deck-stage-zone relative w-24 sm:w-28 md:w-32 clow-aspect select-none overflow-visible"
                    title="แตะเพื่อตัดแบ่งครึ่งกองไพ่">
-                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(-50px, 6px); z-index: 10;">
+                <div id="cut-bottom-packet" class="cut-bottom-packet absolute inset-0" style="transform: translate(calc(var(--cut-offset, 52px) * -1), 6px); z-index: 10;">
                   <div class="w-full h-full absolute top-1.5 left-1.5 rounded-[7px] bg-[#3E1727]/85 border border-[#4A1F12]/80"></div>
                   <div id="cut-bottom-card" class="w-full h-full relative"></div>
-                  <span id="cut-bottom-label" class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] text-[#523020] bg-[#FCF4DC]/80 px-1.5 rounded">
+                  <span id="cut-bottom-label" class="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap font-fahkwang text-[10px] sm:text-xs text-[#523020] bg-[#FCF4DC]/85 px-2 py-0.5 rounded">
                     กองครึ่งล่าง
                   </span>
                 </div>
 
-                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(-54px, 0px); z-index: 20;">
+                <div id="cut-top-packet" class="cut-top-packet absolute inset-0" style="transform: translate(calc(var(--cut-offset, 52px) * -1 - 4px), 0px); z-index: 20;">
                   <div id="cut-top-card" class="w-full h-full relative"></div>
                 </div>
 
                 <div id="cut-target-ghost"
-                     style="transform: translate(52px, 6px);"
+                     style="transform: translate(var(--cut-offset, 52px), 6px);"
                      class="absolute inset-0 rounded-[7px] border-2 border-dashed border-[#8A5414]/65 bg-[#FCF4DC]/45 flex items-center justify-center pointer-events-none">
-                  <span id="cut-target-label" class="font-fahkwang text-[10px] text-[#4F2031]/85 text-center px-1 leading-snug">
+                  <span id="cut-target-label" class="font-fahkwang text-[10px] sm:text-xs text-[#4F2031]/85 text-center px-1 leading-snug">
                     จุดวาง<br>กองตัด
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="pt-3 flex flex-wrap items-center justify-center gap-2.5">
-              <button id="btn-trigger-cut" onclick="performDeckCut()" class="btn-vintage-primary whitespace-nowrap px-4 py-1.5 rounded-md text-xs font-fahkwang min-h-[36px] sm:min-h-0">
-                ✂ ตัดกองไพ่และสลับกอง
+            <div class="pt-4 flex flex-wrap items-center justify-center gap-2.5">
+              <button id="btn-trigger-cut" onclick="performDeckCut()" class="btn-vintage-primary whitespace-nowrap px-5 py-2 rounded-md text-xs sm:text-sm font-fahkwang min-h-[40px] sm:min-h-[42px]">
+                ตัดกองไพ่และสลับกอง
               </button>
             </div>
           </div>
@@ -626,8 +626,8 @@
   </div>
 
   <!-- READING MODAL -->
-  <div id="reading-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(4.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-20 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
-    <div class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] sm:max-h-[calc(100dvh-6.5rem)] overflow-y-auto rounded-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
+  <div id="reading-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center px-3 pt-[calc(4.5rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 md:px-8 sm:pt-20 sm:pb-6 bg-[#2A160E]/60 backdrop-blur-[2px]" onclick="handleBackdropClick(event)">
+    <div id="reading-modal-dialog" class="vintage-frame modal-fade-in editorial-scroll relative w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] sm:max-h-[calc(100dvh-6.5rem)] overflow-y-auto rounded-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 sm:pb-6 md:px-8 md:pb-8 shadow-2xl">
       <div class="sticky top-0 z-20 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-1.5 mb-1.5 bg-[#FBF1D4] border-b border-[#8A5414]/45 flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[#8A5414] shrink-0"><svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
@@ -687,6 +687,6 @@
     </div>
   </footer>
 
-  <script type="module" src="./js/app.js?v=20261124z16"></script>
+  <script type="module" src="./js/app.js?v=20261127i"></script>
 </body>
 </html>

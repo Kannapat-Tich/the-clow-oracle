@@ -698,6 +698,118 @@ body.reading-modal-open #header-spread-pills {
   filter: drop-shadow(0 3px 6px rgba(42, 22, 14, 0.08));
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
 }
+
+/* =========================================================================
+ * CUT STAGE RESPONSIVE OFFSET (ป้องกันกองไพ่ซ้ายทับกรอบจุดวางขวาบน iPad/Desktop)
+ * ========================================================================= */
+.cut-deck-stage-zone {
+  --cut-offset: 52px;
+}
+@media (min-width: 640px) {
+  .cut-deck-stage-zone {
+    --cut-offset: 76px;
+  }
+}
+@media (min-width: 768px) {
+  .cut-deck-stage-zone {
+    --cut-offset: 94px;
+  }
+}
+
+/* =========================================================================
+ * iPAD / TABLET RESPONSIVE POLISH (Portrait 768–840px & Landscape 1024–1279px)
+ * ยึดหลัก Apple HIG Touch Target (40–44px) + สัดส่วน Editorial ที่สมดุลทั้งแนวตั้ง-แนวนอน
+ * ========================================================================= */
+@media (min-width: 768px) and (max-width: 1279px) {
+  /* Comfortable touch targets on utility bar & header */
+  #btn-lang-toggle {
+    min-height: 38px;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+    font-size: 0.78rem;
+  }
+
+  #btn-home {
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 0.5rem;
+  }
+
+  #btn-bgm-toggle,
+  #main-header button[onclick="prevBgmTrack()"],
+  #main-header button[onclick="nextBgmTrack()"] {
+    min-height: 38px;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  #header-spread-pills {
+    gap: 0.45rem;
+    padding: 0.35rem;
+  }
+  #header-spread-pills button {
+    min-height: 38px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  /* Harmonized table banner & ritual panel width */
+  #btn-shuffle {
+    min-height: 36px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+  }
+
+  #deck-stage-panel {
+    max-width: 46rem;
+    padding: 1.5rem 1.75rem;
+  }
+
+  /* Touch-friendly ritual & board buttons (>= 42px) */
+  #btn-skip-question,
+  #btn-submit-question,
+  #btn-shuffle-action,
+  #btn-proceed-next,
+  #btn-trigger-cut,
+  #btn-quick-draw,
+  #btn-quick-draw-all,
+  #btn-confirm-armed-card,
+  #board-reveal-all-footer button,
+  #btn-board-summary,
+  #btn-board-other-spreads,
+  #btn-board-share-story {
+    min-height: 42px;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+    font-size: 0.82rem;
+  }
+
+  #board-canvas-controls button {
+    min-height: 36px;
+    min-width: 38px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  /* Modal touch ergonomics */
+  #reading-modal button[onclick="closeReadingModal()"] {
+    min-height: 38px;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    font-size: 0.78rem;
+  }
+
+  #reading-modal-footer-actions button {
+    min-height: 40px;
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+
+  #footer-feedback-link {
+    min-height: 40px;
+    padding: 0.25rem 0.35rem;
+  }
+}
 .revealed-board-card:hover {
   transform: translateY(-3px) scale(1.02);
   filter: drop-shadow(0 5px 10px rgba(42, 22, 14, 0.13));

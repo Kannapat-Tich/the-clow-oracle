@@ -32,8 +32,8 @@ import {
   getSpreadPlaceholder,
   getPosTitle,
   getPosMeaning
-} from './i18n.js?v=20261124z15';
-import { renderIgStoryCanvas, renderFullSummaryCanvas, canvasToBlob } from './share-card.js?v=20261124z15';
+} from './i18n.js?v=20261127c';
+import { renderIgStoryCanvas, renderFullSummaryCanvas, canvasToBlob } from './share-card.js?v=20261127i';
 
 /**
  * =========================================================================
@@ -1109,8 +1109,14 @@ async function openCompatibilitySummaryModal() {
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="w-full flex flex-col gap-2">
-        <div class="flex flex-wrap items-center justify-end gap-2">
+      <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center justify-end sm:justify-start gap-3 text-[11px] sm:text-xs font-fahkwang text-[#523020]/80 order-2 sm:order-1">
+          <button onclick="saveReadingImage('story', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span data-share-btn-label>${escapeHtml(t('btnShareStory'))}</span>
+          </button>
+        </div>
+        <div class="flex flex-wrap items-center justify-end gap-2 order-1 sm:order-2">
           <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
             ${escapeHtml(t('btnOtherSpreads'))}
           </button>
@@ -1118,17 +1124,16 @@ async function openCompatibilitySummaryModal() {
             ${isEn ? 'Back to Board' : 'กลับไปแท่นไพ่'}
           </button>
         </div>
-        <div class="flex items-center justify-end gap-3 text-[11px] font-fahkwang text-[#523020]/80">
-          <button onclick="saveReadingImage('story', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
-            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            <span data-share-btn-label>${escapeHtml(t('btnShareStory'))}</span>
-          </button>
-        </div>
       </div>
     `;
   }
 
   const modal = document.getElementById('reading-modal');
+  const dialog = document.getElementById('reading-modal-dialog');
+  if (dialog) {
+    dialog.classList.remove('max-w-xl', 'lg:max-w-4xl');
+    dialog.classList.add('max-w-2xl');
+  }
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   document.body.classList.add('reading-modal-open');
@@ -1209,9 +1214,9 @@ function initSpreadNavigation() {
     <button onclick="selectSpread('${spread.spread_id}')"
             class="vintage-spread-card rounded-lg p-3.5 sm:p-5 text-left flex flex-col justify-between focus:outline-none group">
       <div class="space-y-1.5 sm:space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="font-cinzel text-[10px] tracking-[0.16em] text-[#4F2031]">✦ ${spread.engTitle}</span>
-          <span class="px-2 py-0.5 rounded text-[11px] font-fahkwang bg-[#F8DF94] text-[#2A160E] border border-[#4A1F12]/70">${spread.card_count} ${isEn ? (spread.card_count === 1 ? 'Card' : 'Cards') : 'ใบ'}</span>
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-cinzel text-[10px] tracking-[0.14em] text-[#4F2031] truncate">✦ ${spread.engTitle}</span>
+          <span class="whitespace-nowrap shrink-0 px-2 py-0.5 rounded text-[11px] font-fahkwang bg-[#F8DF94] text-[#2A160E] border border-[#4A1F12]/70">${spread.card_count} ${isEn ? (spread.card_count === 1 ? 'Card' : 'Cards') : 'ใบ'}</span>
         </div>
         <h2 class="font-charm text-xl sm:text-2xl text-[#2A160E] group-hover:text-[#4F2031] transition-colors">${getSpreadName(spread)}</h2>
         ${
@@ -1512,7 +1517,7 @@ function renderFannedDeckArc(animateDeal = false) {
       }
 
       return `
-        <div class="w-full flex items-center justify-center ${rowIdx > 0 ? 'mt-1.5 sm:mt-2' : ''}">
+        <div class="w-full flex items-center justify-center ${rowIdx > 0 ? 'mt-2 sm:mt-3 md:mt-3.5' : ''}">
           ${rowButtons.join('')}
         </div>
       `;
@@ -2104,8 +2109,16 @@ function renderSpreadBoard() {
 
   bindBoardCanvasInteractions();
   requestAnimationFrame(() => {
-    applySpreadCanvasZoom();
     const vp = document.getElementById('board-canvas-viewport');
+    const stage = document.getElementById('board-canvas-stage');
+    if (vp && stage && spreadCanvasZoom === 1) {
+      const availW = vp.clientWidth - 20;
+      const baseW = stage.offsetWidth || 0;
+      if (availW > 0 && baseW > availW) {
+        spreadCanvasZoom = Math.max(0.55, Math.floor((availW / baseW) * 100) / 100);
+      }
+    }
+    applySpreadCanvasZoom();
     if (vp && (prevLeft || prevTop)) {
       vp.scrollLeft = prevLeft;
       vp.scrollTop = prevTop;
@@ -2318,7 +2331,7 @@ async function triggerAiInterpretation() {
   outputEl.innerHTML = `
     <div class="space-y-3">
       ${noticeHtml}
-      <div class="space-y-2.5">
+      <div class="${isSingleDaily ? 'space-y-2.5' : 'grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-3'}">
         ${overviewBlocks}
       </div>
 
@@ -2357,24 +2370,29 @@ function openSingleCardModal(posIndex) {
   const posMeaning = getPosMeaning(activeSpread.spread_id, posMeta);
   const body = document.getElementById('modal-reading-body');
   body.innerHTML = `
-    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 pt-1">
-      <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
-        <div class="w-40 sm:w-48 md:w-52 h-auto hero-float-2" data-card-front-slot="${card.id}">
+    <div class="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-5 py-2">
+      <div class="flex flex-col items-center justify-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
+        <div class="w-36 sm:w-32 md:w-36 h-auto hero-float-2" data-card-front-slot="${card.id}">
           ${buildMinimalCardFrontHTML(card)}
         </div>
-        <div class="text-center">
-          <span class="font-cinzel text-base sm:text-lg font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
-          ${!isEn ? `<h3 class="font-charm text-base sm:text-lg text-[#4F2031] mt-0.5 leading-snug">${card.thaiName}</h3>` : ''}
+        <div class="text-center sm:hidden">
+          <span class="font-cinzel text-base font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
+          ${!isEn ? `<h3 class="font-charm text-base text-[#4F2031] mt-0.5 leading-snug">${card.thaiName}</h3>` : ''}
         </div>
       </div>
 
-      <div class="flex-1 space-y-3.5 text-left w-full">
+      <div class="flex-1 flex flex-col justify-center gap-2.5 text-left w-full">
+        <div class="hidden sm:block border-b border-[#8A5414]/35 pb-2">
+          <span class="font-cinzel text-lg font-bold text-[#2A160E] tracking-[0.14em] leading-tight block">${card.name}</span>
+          ${!isEn ? `<h3 class="font-charm text-base md:text-lg text-[#4F2031] mt-0.5 leading-snug">${card.thaiName}</h3>` : ''}
+        </div>
+
         <div id="single-card-ai-box" class="ai-oracle-panel rounded-lg p-3.5 sm:p-4 space-y-2 text-left">
           <div class="border-b border-[#8A5414]/25 pb-2 space-y-0.5">
             <span class="font-fahkwang text-xs sm:text-sm text-[#4F2031] block">${isEn ? `✦ No. ${posMeta.index} · ${posTitle}` : `✦ ลำดับที่ ${posMeta.index} · ${posTitle}`}</span>
             <p class="font-pridi text-[11px] sm:text-xs text-[#523020]">${posMeaning}</p>
           </div>
-          <p class="ai-loading-pulse font-pridi text-xs text-[#523020]">
+          <p class="ai-loading-pulse font-pridi text-xs sm:text-sm text-[#523020]">
             ${isEn ? '☽ Preparing your message for this position...' : '☽ กำลังจัดเตรียมคำทำนายเฉพาะตำแหน่งนี้...'}
           </p>
         </div>
@@ -2431,6 +2449,11 @@ function openSingleCardModal(posIndex) {
   }
 
   const modal = document.getElementById('reading-modal');
+  const dialog = document.getElementById('reading-modal-dialog');
+  if (dialog) {
+    dialog.classList.remove('lg:max-w-4xl', 'max-w-2xl');
+    dialog.classList.add('max-w-xl');
+  }
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   document.body.classList.add('reading-modal-open');
@@ -2520,18 +2543,23 @@ function openFullReadingModal() {
     const card = sortedSlots[0].card;
     body.innerHTML = `
       <div class="space-y-3">
-        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 pt-1">
-          <div class="flex flex-col items-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
+        <div class="flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-6 py-1.5">
+          <div class="flex flex-col items-center justify-center shrink-0 mx-auto sm:mx-0 space-y-1.5">
             <div class="w-36 sm:w-44 h-auto" data-card-front-slot="${card.id}">
               ${buildMinimalCardFrontHTML(card)}
             </div>
-            <div class="text-center">
-              <span class="font-cinzel text-base sm:text-lg font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
+            <div class="text-center sm:hidden">
+              <span class="font-cinzel text-base font-bold text-[#2A160E] tracking-[0.12em] leading-tight block">${card.name}</span>
             </div>
           </div>
 
-          <div class="flex-1 space-y-3 text-left w-full">
-            ${buildAiOraclePanelHTML()}
+          <div class="flex-1 flex flex-col justify-between gap-3 text-left w-full">
+            <div class="hidden sm:block border-b border-[#8A5414]/35 pb-2">
+              <span class="font-cinzel text-lg md:text-xl font-bold text-[#2A160E] tracking-[0.14em] leading-tight block">${card.name}</span>
+            </div>
+            <div class="flex-1 flex flex-col justify-center">
+              ${buildAiOraclePanelHTML()}
+            </div>
           </div>
         </div>
       </div>
@@ -2559,16 +2587,8 @@ function openFullReadingModal() {
   if (fullFooterBar && fullFooterActions) {
     fullFooterBar.classList.remove('hidden');
     fullFooterActions.innerHTML = `
-      <div class="w-full flex flex-col gap-2">
-        <div class="flex flex-wrap items-center justify-end gap-2">
-          <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
-            ${escapeHtml(t('btnOtherSpreads'))}
-          </button>
-          <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
-            ${isEnFooter ? 'Back to Board' : 'กลับไปแท่นไพ่'}
-          </button>
-        </div>
-        <div class="flex items-center justify-end gap-3 text-[11px] font-fahkwang text-[#523020]/80">
+      <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center justify-end sm:justify-start gap-3 text-[11px] sm:text-xs font-fahkwang text-[#523020]/80 order-2 sm:order-1">
           <button onclick="saveReadingImage('story', this)" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#8A5414]/10 hover:text-[#4F2031] transition-colors">
             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             <span data-share-btn-label>${escapeHtml(t('btnShareStory'))}</span>
@@ -2584,11 +2604,25 @@ function openFullReadingModal() {
               : ''
           }
         </div>
+        <div class="flex flex-wrap items-center justify-end gap-2 order-1 sm:order-2">
+          <button onclick="resetToHome()" class="bg-white hover:bg-[#F9F2F5] text-[#4F2031] border border-[#4F2031] px-3.5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang leading-tight transition-colors">
+            ${escapeHtml(t('btnOtherSpreads'))}
+          </button>
+          <button onclick="closeReadingModal()" class="btn-vintage-primary px-5 py-2 sm:py-1.5 rounded-md text-xs font-fahkwang">
+            ${isEnFooter ? 'Back to Board' : 'กลับไปแท่นไพ่'}
+          </button>
+        </div>
       </div>
     `;
   }
 
   const modal = document.getElementById('reading-modal');
+  const dialog = document.getElementById('reading-modal-dialog');
+  if (dialog) {
+    dialog.classList.remove('max-w-xl');
+    dialog.classList.add('max-w-2xl');
+    dialog.classList.toggle('lg:max-w-4xl', !isDaily);
+  }
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   document.body.classList.add('reading-modal-open');
@@ -2803,7 +2837,8 @@ async function saveReadingImage(mode = 'story', triggerBtn = null) {
     });
 
     let shared = false;
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    // ปุ่ม "แชร์" (story) เปิด OS Share Sheet บนมือถือ · ปุ่ม "บันทึกฉบับเต็ม" (full) ดาวน์โหลดเป็นไฟล์ภาพทันที
+    if (isStory && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         const shareUrl = window.location.origin;
         const shareCaption =
@@ -2836,7 +2871,7 @@ async function saveReadingImage(mode = 'story', triggerBtn = null) {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
     }
 
     if (triggerBtn) {

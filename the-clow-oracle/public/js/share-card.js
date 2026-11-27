@@ -10,7 +10,7 @@
  */
 
 import { getCardFrontUrl, getMagicCircleUrl } from '../data/assets.config.js';
-import { getCurrentLang, getSpreadName, getPosTitle } from './i18n.js?v=20261124z6';
+import { getCurrentLang, getSpreadName, getPosTitle } from './i18n.js?v=20261127c';
 
 const DPR = 2;
 const FULL_DPR = 3;   // 3x Retina sharpness — zoom-proof Samsung scroll-capture quality!
@@ -298,13 +298,14 @@ function drawGrimoireCanvasBackdrop(ctx, lw, lh, magicCircleImg, framePadX = 16,
   ctx.fill();
   ctx.restore();
 
-  // Full oversized Clow Magic Circle dead-center of the entire image (matching website backdrop)
+  // Full symmetrical Clow Magic Circle dead-center (sized consistently from shorter side across portrait & landscape)
   if (magicCircleImg) {
     ctx.save();
     rrect(ctx, fx, fy, fw, fh, 14);
     ctx.clip();
     ctx.globalAlpha = 0.13;
-    const cSize = Math.max(fw * 1.18, Math.min(fh * 0.72, fw * 1.38));
+    const shortSide = Math.min(fw, fh);
+    const cSize = shortSide * 1.08;
     const cx = lw / 2 - cSize / 2;
     const cy = lh / 2 - cSize / 2;
     ctx.drawImage(magicCircleImg, cx, cy, cSize, cSize);
@@ -947,8 +948,287 @@ export async function renderIgStoryCanvas(payload) {
 
 /**
  * =========================================================================
- * RENDER 2: FULL SUMMARY (672px logical @ 2x DPR = 1344×auto PNG)
- * สัดส่วนและฟอนต์เหมือนแคปหน้าจอจาก #reading-modal ของหน้าเว็บจริง 100%
+ * RENDER 2A: DESKTOP LANDSCAPE FULL SUMMARY (1280px logical @ 2x DPR = 2560px PNG)
+ * ภาพแนวนอนเต็มจอคอม (กริด 4 คอลัมน์สมมาตร · คงความกระชับต่อใบ ~296px เหมือนบนมือถือ)
+ * - ความรัก 7 ใบ: 4×2 (ใบ 1–7 + กล่องสารนำทางช่องที่ 8)
+ * - เรื่องทั่วไป 10 ใบ: 4×3 (ใบ 1–10 + กล่องสารนำทาง 2 ช่องท้าย)
+ * =========================================================================
+ */
+function renderDesktopLandscapeFullCanvas({
+  spread,
+  placedSlots,
+  readingResult,
+  isEn,
+  spreadId,
+  spreadTitle,
+  dateStr,
+  magicCircleImg,
+  cardImgMap
+}) {
+  const LAND_LW = 1280;
+  const LAND_DPR = 2; // 2560px crisp Retina landscape PNG
+  const framePad = 14;
+  const innerPadX = 32;
+  const innerW = LAND_LW - innerPadX * 2; // 1216px
+  const cols = 4;
+  const colGap = 11;
+  const rowGap = 11;
+  const colW = (innerW - colGap * (cols - 1)) / cols; // ~295.75px
+
+  const thumbW = 48;
+  const thumbH = Math.round(thumbW * 2.18); // ~105px
+  const textXOff = thumbW + 10;
+  const textMaxW = colW - 10 - textXOff - 10;
+  const bodySize = 11.5;
+  const bodyLineH = 17.5;
+
+  const mCanvas = document.createElement('canvas');
+  mCanvas.width = LAND_LW;
+  mCanvas.height = 40;
+  const mctx = mCanvas.getContext('2d');
+
+  const sorted = [...placedSlots].sort((a, b) => a.posIndex - b.posIndex);
+  const connections = Array.isArray(readingResult?.connections) ? readingResult.connections : [];
+
+  const cells = sorted.map((slot, i) => {
+    const posMeta = spread.positions.find((p) => Number(p.index) === Number(slot.posIndex));
+    const posTitle = posMeta ? getPosTitle(spreadId, posMeta) : '';
+    const conn =
+      connections.find((c) => Number(c.positionIndex) === Number(slot.posIndex)) || connections[i] || null;
+    const insight = cleanText((conn && conn.insight) || (i === 0 ? readingResult?.overview : '') || '', isEn);
+
+    mctx.font = `300 ${bodySize}px ${FONT_TRIRONG}`;
+    const lines = wrapText(mctx, insight, textMaxW, isEn);
+    const contentH = 34 + lines.length * bodyLineH + 18;
+    return {
+      type: 'card',
+      span: 1,
+      posIndex: slot.posIndex,
+      card: slot.card,
+      posTitle,
+      lines,
+      minH: Math.max(thumbH + 20, contentH)
+    };
+  });
+
+  // Guiding Message cell fills remaining slot(s) of the final row symmetrically!
+  const rawAdvice = Array.isArray(readingResult?.advice)
+    ? readingResult.advice.map((l) => String(l || '').trim()).filter(Boolean).join(' ')
+    : String(readingResult?.advice || '').trim();
+  const advice = cleanText(isEn ? rawAdvice : rawAdvice.replace(/^ไพ่เหล่านี้ต้องการเตือนคุณว่า\s*/, ''), isEn);
+  const remSlots = (cols - (cells.length % cols)) % cols;
+  const guideSpan = remSlots > 0 ? remSlots : cols;
+
+  if (advice) {
+    const guideBoxW = colW * guideSpan + colGap * (guideSpan - 1);
+    mctx.font = `300 12px ${FONT_TRIRONG}`;
+    const adviceLines = wrapText(mctx, advice, guideBoxW - 30, isEn);
+    const adviceH = 34 + adviceLines.length * 18.5 + 16;
+    cells.push({
+      type: 'advice',
+      span: guideSpan,
+      title: isEn ? '☽ Guiding Message from the Cards' : '☽ สารนำทางจากไพ่',
+      lines: adviceLines,
+      minH: Math.max(thumbH + 20, adviceH)
+    });
+  }
+
+  // Group cells into 4-column rows & compute exact balanced height per row
+  const rows = [];
+  let curRow = [];
+  let curSpan = 0;
+  for (const cell of cells) {
+    if (curSpan + cell.span > cols) {
+      rows.push(curRow);
+      curRow = [];
+      curSpan = 0;
+    }
+    curRow.push({ ...cell, colStart: curSpan });
+    curSpan += cell.span;
+    if (curSpan === cols) {
+      rows.push(curRow);
+      curRow = [];
+      curSpan = 0;
+    }
+  }
+  if (curRow.length > 0) rows.push(curRow);
+
+  const headerBottomY = 82;
+  let cursorY = headerBottomY + 14;
+  const positionedRows = rows.map((row) => {
+    const rowH = Math.max(...row.map((c) => c.minH));
+    const y = cursorY;
+    cursorY += rowH + rowGap;
+    return { y, rowH, cells: row };
+  });
+
+  const footerBarH = 44;
+  const totalLH = cursorY + footerBarH + framePad + 6;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = LAND_LW * LAND_DPR;
+  canvas.height = totalLH * LAND_DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(LAND_DPR, LAND_DPR);
+
+  drawGrimoireCanvasBackdrop(ctx, LAND_LW, totalLH, magicCircleImg, framePad, framePad, framePad);
+
+  // Compact Horizontal Header Bar (Logo Left · Spread Title Center · Date-Time Right)
+  ctx.save();
+  const headerMidY = 48;
+  drawClowStarEmblem(ctx, innerPadX + 15, headerMidY, 14);
+
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(109, 59, 22, 0.90)';
+  ctx.font = `600 9px ${FONT_CINZEL}`;
+  ctx.fillText('CARDCAPTOR SAKURA', innerPadX + 36, headerMidY - 8);
+
+  ctx.fillStyle = COLORS.ink;
+  ctx.font = `700 17px ${FONT_CINZEL}`;
+  ctx.fillText('CLOW CARDS', innerPadX + 36, headerMidY + 8);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.plum;
+  ctx.font = `500 18px ${FONT_TRIRONG}`;
+  ctx.fillText(spreadTitle, LAND_LW / 2, headerMidY);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = COLORS.gold;
+  ctx.font = `400 11.5px ${FONT_TRIRONG}`;
+  ctx.fillText(dateStr, LAND_LW - innerPadX, headerMidY);
+
+  ctx.strokeStyle = 'rgba(138, 84, 20, 0.36)';
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(innerPadX, headerBottomY);
+  ctx.lineTo(LAND_LW - innerPadX, headerBottomY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Render 4-Column Rows
+  for (const row of positionedRows) {
+    for (const c of row.cells) {
+      const cx = innerPadX + c.colStart * (colW + colGap);
+      const cw = colW * c.span + colGap * (c.span - 1);
+      const cy = row.y;
+      const ch = row.rowH;
+
+      if (c.type === 'card') {
+        ctx.save();
+        rrect(ctx, cx, cy, cw, ch, 9);
+        ctx.fillStyle = COLORS.boxFill;
+        ctx.fill();
+        ctx.strokeStyle = COLORS.boxStroke;
+        ctx.lineWidth = 0.85;
+        ctx.stroke();
+
+        const imgX = cx + 10;
+        const imgY = Math.round(cy + (ch - thumbH) / 2);
+        drawBorderlessCard(ctx, cardImgMap.get(c.card.id), imgX, imgY, thumbW, thumbH);
+
+        const tx = imgX + textXOff;
+        const blockH = 30 + c.lines.length * bodyLineH;
+        let ty = Math.round(cy + Math.max(15, (ch - blockH) / 2 + 5));
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        const posTag = isEn ? `✦ No. ${c.posIndex}` : `✦ ลำดับที่ ${c.posIndex}`;
+        ctx.fillStyle = COLORS.gold;
+        ctx.font = `400 10.5px ${FONT_TRIRONG}`;
+        ctx.fillText(posTag, tx, ty);
+        const tagW = ctx.measureText(posTag).width;
+
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = `700 10.5px ${FONT_CINZEL}`;
+        ctx.fillText(c.card.name, tx + tagW + 5, ty);
+        ty += 15;
+
+        if (c.posTitle) {
+          ctx.fillStyle = COLORS.plum;
+          ctx.font = `400 10.5px ${FONT_TRIRONG}`;
+          ctx.fillText(c.posTitle, tx, ty);
+          ty += 17;
+        }
+
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = `300 ${bodySize}px ${FONT_TRIRONG}`;
+        c.lines.forEach((ln) => {
+          ctx.fillText(ln, tx, ty);
+          ty += bodyLineH;
+        });
+        ctx.restore();
+      } else if (c.type === 'advice') {
+        ctx.save();
+        rrect(ctx, cx, cy, cw, ch, 9);
+        ctx.fillStyle = COLORS.plumTint;
+        ctx.fill();
+
+        rrect(ctx, cx, cy, 4, ch, 2);
+        ctx.fillStyle = COLORS.plum;
+        ctx.fill();
+
+        const advBlockH = 22 + c.lines.length * 18.5;
+        let ty = Math.round(cy + Math.max(18, (ch - advBlockH) / 2 + 6));
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = COLORS.plum;
+        ctx.font = `400 12px ${FONT_TRIRONG}`;
+        ctx.fillText(c.title, cx + 15, ty);
+        ty += 21;
+
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = `300 12px ${FONT_TRIRONG}`;
+        c.lines.forEach((ln) => {
+          ctx.fillText(ln, cx + 15, ty);
+          ty += 18.5;
+        });
+        ctx.restore();
+      }
+    }
+  }
+
+  // Compact Horizontal Footer Bar (Brand Left · Closing Quote Center · Dynamic Domain Right)
+  const footRuleY = cursorY + 4;
+  const footMidY = footRuleY + 22;
+  const closing = cleanText(readingResult?.closing || '', isEn);
+  const domain = getDynamicDomainLabel();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(138, 84, 20, 0.30)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(innerPadX, footRuleY);
+  ctx.lineTo(LAND_LW - innerPadX, footRuleY);
+  ctx.stroke();
+
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORS.ink;
+  ctx.font = `700 10px ${FONT_CINZEL}`;
+  ctx.fillText('✦  CARDCAPTOR SAKURA · CLOW CARDS  ✦', innerPadX, footMidY);
+
+  if (closing) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.plum;
+    ctx.font = `500 11.5px ${FONT_TRIRONG}`;
+    ctx.fillText(`“${closing}”`, LAND_LW / 2, footMidY);
+  }
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = COLORS.plum;
+  ctx.font = `600 10.5px ${FONT_CINZEL}`;
+  ctx.fillText(domain, LAND_LW - innerPadX, footMidY);
+  ctx.restore();
+
+  return canvas;
+}
+
+/**
+ * =========================================================================
+ * RENDER 2: FULL SUMMARY (Portrait 3x on Mobile/Tablet · Landscape 2x on Desktop)
  * =========================================================================
  */
 export async function renderFullSummaryCanvas(payload) {
@@ -971,6 +1251,27 @@ export async function renderFullSummaryCanvas(payload) {
     await Promise.all(
       placedSlots.map(async (slot) => cardImgMap.set(slot.card.id, await loadImage(getCardFrontUrl(slot.card.driveKey))))
     );
+  }
+
+  // Desktop (>= 1024px) multi-card spreads -> True Landscape 4-Column Grimoire Sheet (2560px wide)
+  const isDesktopLandscape =
+    typeof window !== 'undefined' &&
+    window.innerWidth >= 1024 &&
+    spreadId !== 'daily_single' &&
+    spreadId !== 'compatibility_52';
+
+  if (isDesktopLandscape) {
+    return renderDesktopLandscapeFullCanvas({
+      spread,
+      placedSlots,
+      readingResult,
+      isEn,
+      spreadId,
+      spreadTitle,
+      dateStr,
+      magicCircleImg,
+      cardImgMap
+    });
   }
 
   // Logical measurement canvas matching user's portrait mobile width (3x DPR = zoom-proof)
